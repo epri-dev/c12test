@@ -1,0 +1,3 @@
+[submodule "C12Adapter"]
+	path = C12Adapter
+	url = https://github.com/beroset/C12Adapter.git
