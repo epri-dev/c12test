@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 set(EXECUTABLE_NAME "c12test")
-#find_package(MeteringSDK REQUIRED)
+#find_package(MeteringSDK OPTIONAL)
 add_executable(${EXECUTABLE_NAME} autoreader.cpp C12Tables.cpp Setup.cpp)
 target_compile_options(${EXECUTABLE_NAME} PRIVATE "-Wall;-Wextra")
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${METERINGSDK_INCLUDE_DIR})
+target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE ${METERINGSDK_INCLUDE_DIR} ${METERINGSDK_BINARY_DIR})
+find_library(METERINGSDK_MCORE_LIBS
+    NAMES MCORE
+    HINTS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+find_library(METERINGSDK_MCOM_LIBS
+    NAMES MCOM
+    HINTS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+set(METERINGSDK_LIBS "${METERINGSDK_MCORE_LIBS}" "${METERINGSDK_MCOM_LIBS}")
 target_link_libraries(${EXECUTABLE_NAME} ${METERINGSDK_LIBS})
 INSTALL(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)

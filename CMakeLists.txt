@@ -20,10 +20,22 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Don't build the examples within C12Adapter
 option(BUILD_EXAMPLES OFF)
-set(METERINGSDK_INCLUDE_DIR "C12Adapter/src/MeteringSDK")
+
+# configure C12Adapter 
+set(M_PRODUCT_NAME "c12test")
+set(M_COMPANY_NAME "EPRI")
+set(M_PRODUCT_LEGAL_COPYRIGHT "EPRI")
+set(M_PRODUCT_VERSION_MAJOR    ${PRODUCT_VERSION_MAJOR})
+set(M_PRODUCT_VERSION_MIDDLE   ${PRODUCT_VERSION_MIDDLE})
+set(M_PRODUCT_VERSION_MINOR    ${PRODUCT_VERSION_MINOR})
+set(M_PRODUCT_VERSION_TAG      ${PRODUCT_VERSION_TAG})
+
+# put libraries where we can find them and link to them
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(METERINGSDK_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/C12Adapter/src/MeteringSDK")
 add_subdirectory(C12Adapter)
 
-set(CMAKE_CXX_STANDARD 17)
+set(METERINGSDK_BINARY_DIR "${CMAKE_BINARY_DIR}/C12Adapter/MeteringSDK")
 add_subdirectory(src)
 if (BUILD_DOCS)
     add_subdirectory(doc)
