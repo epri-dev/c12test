@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 set(EXECUTABLE_NAME "c12test")
-find_package(MeteringSDK REQUIRED)
+#find_package(MeteringSDK REQUIRED)
 add_executable(${EXECUTABLE_NAME} autoreader.cpp C12Tables.cpp Setup.cpp)
 target_compile_options(${EXECUTABLE_NAME} PRIVATE "-Wall;-Wextra")
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${METERINGSDK_INCLUDE_DIR})
