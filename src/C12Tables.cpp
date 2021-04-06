@@ -13,7 +13,7 @@
     std::copy(carr.begin(), carr.end(), std::ostream_iterator<char>(ostr, "")); \
         ostr << "\"\n";
 
-static std::vector<bool> fetchSet(std::string::iterator& begin, std::size_t size) {
+static std::vector<bool> fetchSet(std::string::const_iterator& begin, std::size_t size) {
     auto end{begin + size};
     std::vector<bool> retval;
     retval.reserve(size * 8);
@@ -28,7 +28,22 @@ static std::vector<bool> fetchSet(std::string::iterator& begin, std::size_t size
     return retval;
 }
 
-ST_000_GEN_CONFIG_TBL::ST_000_GEN_CONFIG_TBL(std::string bytes) {
+static std::vector<bool> fetchSet(const uint8_t* begin, std::size_t size) {
+    auto end{begin + size};
+    std::vector<bool> retval;
+    retval.reserve(size * 8);
+    for (auto count{size}; begin < end; ++begin) {
+        for (uint8_t mask{1}; mask; mask <<= 1) {
+            if (count--)
+                retval.push_back(*begin & mask);
+            else
+                break;
+        }
+    }
+    return retval;
+}
+
+ST_000_GEN_CONFIG_TBL::ST_000_GEN_CONFIG_TBL(const std::string& bytes) {
     if (bytes.size() >= 18) {
         auto here{bytes.begin()};
         FORMAT_CONTROL_1 = *here++;
@@ -56,6 +71,36 @@ ST_000_GEN_CONFIG_TBL::ST_000_GEN_CONFIG_TBL(std::string bytes) {
         MFG_TBLS_WRITE = fetchSet(here, DIM_MFG_TBLS_USED);
     }
 }
+
+ST_000_GEN_CONFIG_TBL::ST_000_GEN_CONFIG_TBL(std::initializer_list<uint8_t> bytes) {
+    if (bytes.size() >= 18) {
+        auto here{bytes.begin()};
+        FORMAT_CONTROL_1 = *here++;
+        FORMAT_CONTROL_2 = *here++;
+        FORMAT_CONTROL_3 = *here++;
+        std::copy(here, here + DEVICE_CLASS.size(), DEVICE_CLASS.begin());
+        here += DEVICE_CLASS.size();
+        NAMEPLATE_TYPE = *here++;
+        DEFAULT_SET_USED = *here++;
+        MAX_PROC_PARM_LENGTH = *here++;
+        MAX_RESP_DATA_LEN = *here++;
+        STD_VERSION_NO = *here++;
+        STD_REVISION_NO = *here++;
+        DIM_STD_TBLS_USED = *here++;
+        DIM_MFG_TBLS_USED = *here++;
+        DIM_STD_PROC_USED = *here++;
+        DIM_MFG_PROC_USED = *here++;
+        DIM_MFG_STATUS_USED = *here++;
+        NBR_PENDING = *here++;
+        STD_TBLS_USED = fetchSet(here, DIM_STD_TBLS_USED);
+        MFG_TBLS_USED = fetchSet(here, DIM_MFG_TBLS_USED);
+        STD_PROC_USED = fetchSet(here, DIM_STD_PROC_USED);
+        MFG_PROC_USED = fetchSet(here, DIM_MFG_PROC_USED);
+        STD_TBLS_WRITE = fetchSet(here, DIM_STD_TBLS_USED);
+        MFG_TBLS_WRITE = fetchSet(here, DIM_MFG_TBLS_USED);
+    }
+}
+
 
 std::ostream& operator<<(std::ostream& out, const ST_000_GEN_CONFIG_TBL& st0) {
     SHOWXB(out, st0.FORMAT_CONTROL_1);

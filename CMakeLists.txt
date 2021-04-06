@@ -14,12 +14,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 
 # options off-by-default that you can enable
 option(BUILD_DOCS "Build the documentation" OFF)
+# Don't build the examples within C12Adapter
+option(BUILD_EXAMPLES OFF)
 
 # options on-by-default that you can disable
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
-# Don't build the examples within C12Adapter
-option(BUILD_EXAMPLES OFF)
 
 # configure C12Adapter 
 set(M_PRODUCT_NAME "c12test")
@@ -40,8 +40,14 @@ add_subdirectory(src)
 if (BUILD_DOCS)
     add_subdirectory(doc)
 endif (BUILD_DOCS)
-SET(CPACK_SOURCE_IGNORE_FILES "/build/;.swp;.git")
-SET(CPACK_PACKAGE_VENDOR "EPRI")
+
+if (BUILD_TESTING)
+    include(CTest)
+    add_subdirectory(test)
+endif() 
+
+set(CPACK_SOURCE_IGNORE_FILES "/build/;.swp;.git")
+set(CPACK_PACKAGE_VENDOR "EPRI")
 set(CPACK_SOURCE_GENERATOR "TGZ")
-INCLUDE(InstallRequiredSystemLibraries)
+include(InstallRequiredSystemLibraries)
 include (CPack)

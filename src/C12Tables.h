@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <iostream>
+#include <initializer_list>
 
 struct ST_000_GEN_CONFIG_TBL
 {
@@ -29,15 +30,16 @@ struct ST_000_GEN_CONFIG_TBL
     std::vector<bool> STD_TBLS_WRITE;
     std::vector<bool> MFG_TBLS_WRITE;
 
-    ST_000_GEN_CONFIG_TBL(std::string bytes);
+    ST_000_GEN_CONFIG_TBL(const std::string& bytes);
+    ST_000_GEN_CONFIG_TBL(std::initializer_list<uint8_t> ll);
 
     friend std::ostream& operator<<(std::ostream& out, const ST_000_GEN_CONFIG_TBL& st0);
 };
 
 struct ST_001_GENERAL_MFG_ID_TBL
 {
-    std::array<char,4> MANUFACTURER;    // This string is not zero-terminated
-    std::array<char, 8>   ED_MODEL;        // This string is not zero-terminated
+    std::array<char, 4> MANUFACTURER;    // This string is not zero-terminated
+    std::array<char, 8>   ED_MODEL;      // This string is not zero-terminated
     uint8_t HW_VERSION_NUMBER;  // Hardware Version Number
     uint8_t HW_REVISION_NUMBER; // Hardware Revision Number
     uint8_t FW_VERSION_NUMBER;  // Firmware Version Number
