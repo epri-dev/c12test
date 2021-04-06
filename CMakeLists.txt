@@ -8,11 +8,11 @@ if (POLICY CMP0077)
   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 endif (POLICY CMP0077)
 
-project(c12test VERSION 1.0.0 LANGUAGES C CXX)
+project(c12test VERSION 1.0.4.6 LANGUAGES C CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/Modules/")
 include(FetchContent)
 FetchContent_Declare(C12Adapter 
-    GIT_REPOSITORY git@github.com:beroset/C12Adapter.git
+    GIT_REPOSITORY https://github.com/beroset/C12Adapter.git
 )
 
 # Check if population has already been performed
@@ -26,10 +26,7 @@ if(NOT ${lcName}_POPULATED)
     set(M_PRODUCT_NAME "c12test")
     set(M_COMPANY_NAME "EPRI")
     set(M_PRODUCT_LEGAL_COPYRIGHT "EPRI")
-    set(M_PRODUCT_VERSION_MAJOR    ${PRODUCT_VERSION_MAJOR})
-    set(M_PRODUCT_VERSION_MIDDLE   ${PRODUCT_VERSION_MIDDLE})
-    set(M_PRODUCT_VERSION_MINOR    ${PRODUCT_VERSION_MINOR})
-    set(M_PRODUCT_VERSION_TAG      ${PRODUCT_VERSION_TAG})
+    set(M_PRODUCT_VERSION    ${PROJECT_VERSION})
     set(METERINGSDK_INCLUDE_DIR "${${lcName}_SOURCE_DIR}/src/MeteringSDK")
     include_directories("${${lcName}_BINARY_DIR}/MeteringSDK")
     # put libraries where we can find them and link to them
