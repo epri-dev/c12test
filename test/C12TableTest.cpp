@@ -6,7 +6,7 @@
 #include "C12Tables.h"
 #include <gtest/gtest.h>
 
-static ST_000_GEN_CONFIG_TBL st0{ 
+static std::basic_string<uint8_t> st0{ 
      0x12,0x0A,0x9A,0x45, 0x45,0x20,0x20,0x02, 
      0x00,0x13,0x18,0x01, 0x00,0x0D,0x0D,0x03,
      0x05,0x0D,0x06,0xFF, 0xAD,0xF0,0xDF,0x03, 
@@ -19,10 +19,38 @@ static ST_000_GEN_CONFIG_TBL st0{
      0x19,0x67,0x10,0x00, 0x82,0xF5,0xE0,
 };
 
-TEST(C12TableTest, testBasicTable) {
-    std::string devClass(4,'?');
-    std::copy(st0.DEVICE_CLASS.begin(), st0.DEVICE_CLASS.end(), devClass.begin());
-    EXPECT_EQ(st0.DEVICE_CLASS.size(), 4);
-    EXPECT_EQ(devClass.size(), 4);
-    EXPECT_EQ(devClass, "EE  ");
+Table MakeST0(const uint8_t *tabledata) {
+    Table ST0{0, "GEN_CONFIG_TBL"}; 
+    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::UINT, 1);
+    ST0.addField("DEVICE_CLASS", Table::fieldtype::BINARY, 4);
+    ST0.addField("NAMEPLATE_TYPE", Table::fieldtype::UINT, 1);
+    ST0.addField("DEFAULT_SET_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("MAX_PROC_PARM_LENGTH", Table::fieldtype::UINT, 1);
+    ST0.addField("MAX_RESP_DATA_LEN", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_VERSION_NO", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_REVISION_NO", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_STD_TBLS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_TBLS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_STD_PROC_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_PROC_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_STATUS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("NBR_PENDING", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_PROC_USED"));
+    ST0.addField("MFG_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_PROC_USED"));
+    ST0.addField("STD_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    return ST0;
 }
+
+TEST(C12TableTest, testBasicTable) {
+    auto ST0 = MakeST0(st0.data());
+    std::stringstream ss;
+    ST0.printFieldTo(st0.data(), ss, "DEVICE_CLASS");
+    std::string s{ss.str()};
+    EXPECT_EQ(s, "\"EE  \"");
+}
+

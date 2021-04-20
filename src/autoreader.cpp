@@ -126,6 +126,52 @@ static void Communicate(MProtocol& proto, const MStdStringVector& tables)
    CommitCommunication(proto);
 }
 
+Table MakeST0(const uint8_t *tabledata) {
+    Table ST0{0, "GEN_CONFIG_TBL"}; 
+    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::UINT, 1);
+    ST0.addField("DEVICE_CLASS", Table::fieldtype::BINARY, 4);
+    ST0.addField("NAMEPLATE_TYPE", Table::fieldtype::UINT, 1);
+    ST0.addField("DEFAULT_SET_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("MAX_PROC_PARM_LENGTH", Table::fieldtype::UINT, 1);
+    ST0.addField("MAX_RESP_DATA_LEN", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_VERSION_NO", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_REVISION_NO", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_STD_TBLS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_TBLS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_STD_PROC_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_PROC_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("DIM_MFG_STATUS_USED", Table::fieldtype::UINT, 1);
+    ST0.addField("NBR_PENDING", Table::fieldtype::UINT, 1);
+    ST0.addField("STD_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_PROC_USED"));
+    ST0.addField("MFG_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_PROC_USED"));
+    ST0.addField("STD_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    return ST0;
+}
+
+Table MakeST1() {
+    Table ST1{1, "GENERAL_MFG_ID_TBL"}; 
+    ST1.addField("MANUFACTURER", Table::fieldtype::STRING, 4);
+    ST1.addField("ED_MODEL", Table::fieldtype::STRING, 8);
+    ST1.addField("HW_VERSION_NUMBER", Table::fieldtype::UINT, 1);
+    ST1.addField("HW_REVISION_NUMBER", Table::fieldtype::UINT, 1);
+    ST1.addField("FW_VERSION_NUMBER", Table::fieldtype::UINT, 1);
+    ST1.addField("FW_REVISION_NUMBER", Table::fieldtype::UINT, 1);
+    ST1.addField("MFG_SERIAL_NUMBER", Table::fieldtype::STRING, 16);
+    return ST1;
+}
+
+Table MakeST5() {
+    Table ST5{5, "DEVICE_IDENT_TBL"}; 
+    ST5.addField("IDENTIFICATION", Table::fieldtype::STRING, 20);
+    return ST5;
+}
+
+
 void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
    auto it = tables.begin();
@@ -150,13 +196,24 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
            << std::endl;
       switch (itemInt) {
           case 0:
-            std::cout << ST_000_GEN_CONFIG_TBL(proto.QGetTableData(itemInt, count));
+          { 
+              std::string table{proto.QGetTableData(itemInt,count)};
+              const uint8_t *ptr = reinterpret_cast<const uint8_t *>(table.data());
+              auto ST0{MakeST0(ptr)};
+              ST0.printTo(ptr, std::cout);
+          }
             break;
           case 1:
-            std::cout << ST_001_GENERAL_MFG_ID_TBL(proto.QGetTableData(itemInt, count));
+          { 
+              auto ST1{MakeST1()};
+              ST1.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
             break;
           case 5:
-            std::cout << ST_005_DEVICE_IDENT_TBL(proto.QGetTableData(itemInt, count));
+          { 
+              auto ST5{MakeST5()};
+              ST5.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
             break;
           default:
             // do nothing
