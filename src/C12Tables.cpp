@@ -4,6 +4,21 @@
 #include <iomanip>
 #include <iostream>
 
+static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool little_endian) {
+    unsigned value{0};
+    if (little_endian) {
+        dataptr += len - 1;
+        for (std::size_t i{0}; i < len; ++i) {
+            value = (value << 8) | *dataptr--;
+        }
+    } else {
+        for (std::size_t i{0}; i < len; ++i) {
+            value = (value << 8) | *dataptr++;
+        }
+    }
+    return value;
+}
+
 UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool little_endian)
     : name{name}
     , offset{offset}
@@ -13,19 +28,7 @@ UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool little_en
 }
 
 unsigned UINT::operator()(const uint8_t *tabledata) const {
-    unsigned value{0};
-    tabledata += offset;
-    if (little_endian) {
-        for (std::size_t i{0}; i < len; ++i) {
-            value = (value << 8) | *tabledata++;
-        }
-    } else {
-        tabledata += len - 1;
-        for (std::size_t i{0}; i < len; ++i) {
-            value = (value << 8) | *tabledata--;
-        }
-    }
-    return value;
+    return ReadUnsigned(tabledata + offset, len, little_endian);
 }
 
 std::ostream& UINT::printTo(const uint8_t *tabledata, std::ostream& out) const {
@@ -109,6 +112,36 @@ std::ostream& SET::printTo(const uint8_t *tabledata, std::ostream& out) const {
     return out << "}";
 }
 
+BITFIELD::BITFIELD(std::string name, std::size_t offset, std::size_t len)
+    : name{name}
+    , offset{offset}
+    , len{len}
+{
+}
+
+std::ostream& BITFIELD::printTo(const uint8_t *tabledata, std::ostream& out) const {
+    out << "{\n"; 
+    for (const auto& sub : subfields) {
+        out << "\t" << sub.Name() << " = " << sub(ReadUnsigned(tabledata + offset, len, false)) << '\n';
+    }
+    return out << "    }";
+}
+
+BITFIELD::Subfield::Subfield(std::string name, unsigned startbit, unsigned endbit)
+    : name{name}
+    , shift{startbit}
+    , mask{(1u << (endbit + 1 - startbit)) - 1}
+{}
+
+unsigned BITFIELD::Subfield::operator()(unsigned fielddata) const {
+    return (fielddata >> shift) & mask;    
+}
+
+void BITFIELD::addSubfield(std::string name, unsigned startbit, unsigned endbit) {
+    subfields.emplace_back(Subfield{name, startbit, endbit});
+}
+
+
 std::size_t Table::addField(std::string name, Table::fieldtype type, std::size_t fieldsize) {
     switch (type) {
         case Table::fieldtype::UINT:
@@ -122,6 +155,9 @@ std::size_t Table::addField(std::string name, Table::fieldtype type, std::size_t
             break;
         case Table::fieldtype::BINARY:
             emplace_back(std::make_unique<BINARY>(name, totalsize, fieldsize));
+            break;
+        case Table::fieldtype::BITFIELD:
+            emplace_back(std::make_unique<BITFIELD>(name, totalsize, fieldsize));
             break;
     }
     return totalsize += fieldsize;
@@ -157,5 +193,14 @@ std::optional<std::unique_ptr<Field>> Table::operator[](const std::string &field
         }
     }
     return std::nullopt;
+}
+
+void Table::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit) {
+    for (const auto& fld: *this) {
+        if (fld->Name() == fieldname) {
+            fld->addSubfield(subfieldname, startbit, endbit);
+            return;
+        }
+    }
 }
 

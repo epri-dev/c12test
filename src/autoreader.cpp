@@ -128,9 +128,18 @@ static void Communicate(MProtocol& proto, const MStdStringVector& tables)
 
 Table MakeST0(const uint8_t *tabledata) {
     Table ST0{0, "GEN_CONFIG_TBL"}; 
-    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::UINT, 1);
-    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::UINT, 1);
-    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
+    ST0.addSubfield("FORMAT_CONTROL_1", "CHAR_FORMAT", 1, 3);
+    ST0.addSubfield("FORMAT_CONTROL_1", "MODEL_SELECT", 4, 6);
+    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_2", "TM_FORMAT", 0, 2);
+    ST0.addSubfield("FORMAT_CONTROL_2", "DATA_ACCESS_METHOD", 3, 4);
+    ST0.addSubfield("FORMAT_CONTROL_2", "ID_FORM", 5, 5);
+    ST0.addSubfield("FORMAT_CONTROL_2", "INT_FORMAT", 6, 7);
+    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_3", "NI_FORMAT1", 0, 3);
+    ST0.addSubfield("FORMAT_CONTROL_3", "NI_FORMAT2", 4, 7);
     ST0.addField("DEVICE_CLASS", Table::fieldtype::BINARY, 4);
     ST0.addField("NAMEPLATE_TYPE", Table::fieldtype::UINT, 1);
     ST0.addField("DEFAULT_SET_USED", Table::fieldtype::UINT, 1);
@@ -163,6 +172,25 @@ Table MakeST1() {
     ST1.addField("FW_REVISION_NUMBER", Table::fieldtype::UINT, 1);
     ST1.addField("MFG_SERIAL_NUMBER", Table::fieldtype::STRING, 16);
     return ST1;
+}
+
+Table MakeST2() {
+    Table ST2{2, "DEVICE_NAMEPLATE_TBL"}; 
+    ST2.addField("E_KH", Table::fieldtype::STRING, 6);
+    ST2.addField("E_KT", Table::fieldtype::STRING, 6);
+    ST2.addField("E_INPUT_SCALAR", Table::fieldtype::UINT, 1);
+    ST2.addField("E_ED_CONFIG", Table::fieldtype::STRING, 5);
+    ST2.addField("E_ELEMENTS", Table::fieldtype::BITFIELD, 2);
+    ST2.addSubfield("E_ELEMENTS", "E_FREQ", 0, 2);
+    ST2.addSubfield("E_ELEMENTS", "E_NO_OF_ELEMENTS", 3, 5);
+    ST2.addSubfield("E_ELEMENTS", "E_BASE_TYPE", 6, 9);
+    ST2.addSubfield("E_ELEMENTS", "E_ACCURACY_CLASS", 10, 15);
+    ST2.addField("E_VOLTS", Table::fieldtype::BITFIELD, 1);
+    ST2.addSubfield("E_VOLTS", "E_ELEMENTS_VOLTS", 0, 3);
+    ST2.addSubfield("E_VOLTS", "E_ED_SUPPLY_VOLTS", 4, 7);
+    ST2.addField("E_CLASS_MAX_AMPS", Table::fieldtype::STRING, 6);
+    ST2.addField("E_TA", Table::fieldtype::STRING, 6);
+    return ST2;
 }
 
 Table MakeST5() {
@@ -207,6 +235,12 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
           { 
               auto ST1{MakeST1()};
               ST1.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 2:
+          { 
+              auto ST2{MakeST2()};
+              ST2.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           case 5:

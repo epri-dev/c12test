@@ -14,6 +14,7 @@ struct Field {
     virtual std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const = 0;
     virtual unsigned value(const uint8_t *) const { return 0; }
     virtual std::unique_ptr<Field> clone() const = 0;
+    virtual void addSubfield(std::string, unsigned, unsigned) {}
 };
 
 class UINT : public Field {
@@ -78,15 +79,44 @@ private:
     std::size_t len;
 };
 
+/* a bitfield is a collection of named subfields */
+class BITFIELD : public Field {
+public:
+    std::string Name() const override { return name; }
+    BITFIELD(std::string name, std::size_t offset, std::size_t len=1);
+    std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
+    std::unique_ptr<Field> clone() const override { 
+        return std::unique_ptr<Field>(new BITFIELD{*this});
+    }
+    // a subfield can be BOOL, UINT or FILL which is simply ignored
+    class Subfield {
+    public:
+        Subfield(std::string name, unsigned startbit, unsigned endbit);
+        std::string Name() const { return name; }
+        unsigned operator()(unsigned fielddata) const;
+    private:
+        std::string name;
+        unsigned shift;
+        unsigned mask;
+    };
+    void addSubfield(std::string name, unsigned startbit, unsigned endbit) override;
+private:
+    std::string name;
+    std::size_t offset;
+    std::size_t len;
+    std::vector<Subfield> subfields;
+};
+
 class Table : public std::vector<std::unique_ptr<Field>> {
 public:
-    enum class fieldtype{UINT, SET, BINARY, STRING};
+    enum class fieldtype{UINT, SET, BINARY, STRING, BITFIELD};
     Table(unsigned number, std::string name);
     std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize);
     std::ostream& printTo(const std::string& str, std::ostream& out) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const;
     std::size_t value(const uint8_t *tabledata, const std::string& fieldname) const;
     std::optional<std::unique_ptr<Field>> operator[](const std::string &fieldname) const;
+    void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
 private:
     unsigned num = 0;
     std::string name;

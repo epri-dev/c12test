@@ -21,9 +21,18 @@ static std::basic_string<uint8_t> st0{
 
 Table MakeST0(const uint8_t *tabledata) {
     Table ST0{0, "GEN_CONFIG_TBL"}; 
-    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::UINT, 1);
-    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::UINT, 1);
-    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::UINT, 1);
+    ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
+    ST0.addSubfield("FORMAT_CONTROL_1", "CHAR_FORMAT", 1, 3);
+    ST0.addSubfield("FORMAT_CONTROL_1", "MODEL_SELECT", 4, 6);
+    ST0.addField("FORMAT_CONTROL_2", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_2", "TM_FORMAT", 0, 2);
+    ST0.addSubfield("FORMAT_CONTROL_2", "DATA_ACCESS_METHOD", 3, 4);
+    ST0.addSubfield("FORMAT_CONTROL_2", "ID_FORM", 5, 5);
+    ST0.addSubfield("FORMAT_CONTROL_2", "INT_FORMAT", 6, 7);
+    ST0.addField("FORMAT_CONTROL_3", Table::fieldtype::BITFIELD, 1);
+    ST0.addSubfield("FORMAT_CONTROL_3", "NI_FORMAT1", 0, 3);
+    ST0.addSubfield("FORMAT_CONTROL_3", "NI_FORMAT2", 4, 7);
     ST0.addField("DEVICE_CLASS", Table::fieldtype::BINARY, 4);
     ST0.addField("NAMEPLATE_TYPE", Table::fieldtype::UINT, 1);
     ST0.addField("DEFAULT_SET_USED", Table::fieldtype::UINT, 1);
