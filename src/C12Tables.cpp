@@ -25,16 +25,15 @@ static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool big_e
     return value;
 }
 
-UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool big_endian)
+UINT::UINT(std::string name, std::size_t offset, std::size_t len)
     : name{name}
     , offset{offset}
     , len{len}
-    , big_endian{big_endian}
 {
 }
 
 unsigned UINT::operator()(const uint8_t *tabledata) const {
-    return ReadUnsigned(tabledata + offset, len, big_endian);
+    return ReadUnsigned(tabledata + offset, len, global_big_endian);
 }
 
 std::ostream& UINT::printTo(const uint8_t *tabledata, std::ostream& out) const {

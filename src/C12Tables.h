@@ -22,7 +22,7 @@ struct Field {
 class UINT : public Field {
 public:
     std::string Name() const override { return name; }
-    UINT(std::string name, std::size_t offset, std::size_t len=1, bool big_endian=true);
+    UINT(std::string name, std::size_t offset, std::size_t len=1);
     unsigned operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
     unsigned value(const uint8_t *tbldata) const override { return operator()(tbldata); }
@@ -33,7 +33,6 @@ private:
     std::string name;
     std::size_t offset;
     std::size_t len;
-    bool big_endian;
 };
 
 class BINARY : public Field {
