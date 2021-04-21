@@ -213,3 +213,6 @@ void Table::addSubfield(const std::string& fieldname, std::string subfieldname, 
     }
 }
 
+void Table::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit) {
+    addSubfield(fieldname, subfieldname, startbit, startbit);
+}

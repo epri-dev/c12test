@@ -193,10 +193,98 @@ Table MakeST2() {
     return ST2;
 }
 
+Table MakeST3() {
+    Table ST3{3, "ED_MODE_STATUS_TBL"}; 
+    ST3.addField("ED_MODE", Table::fieldtype::BITFIELD, 1);
+    ST3.addSubfield("ED_MODE", "METERING_FLAG", 0);
+    ST3.addSubfield("ED_MODE", "TEST_MODE_FLAG", 1);
+    ST3.addSubfield("ED_MODE", "METER_SHOP_MODE_FLAG", 2);
+    ST3.addSubfield("ED_MODE", "FACTORY_FLAG", 3);
+    ST3.addField("ED_STD_STATUS1", Table::fieldtype::BITFIELD, 2);
+    ST3.addSubfield("ED_STD_STATUS1", "UNPROGRAMMED_FLAG", 0);
+    ST3.addSubfield("ED_STD_STATUS1", "CONFIGURATION_ERROR_FLAG", 1);
+    ST3.addSubfield("ED_STD_STATUS1", "SELF_CHK_ERROR_FLAG", 2);
+    ST3.addSubfield("ED_STD_STATUS1", "RAM_FAILURE_FLAG", 3);
+    ST3.addSubfield("ED_STD_STATUS1", "ROM_FAILURE_FLAG", 4);
+    ST3.addSubfield("ED_STD_STATUS1", "NONVOL_MEM_FAILURE_FLAG", 5);
+    ST3.addSubfield("ED_STD_STATUS1", "CLOCK_ERROR_FLAG", 6);
+    ST3.addSubfield("ED_STD_STATUS1", "MEASUREMENT_ERROR_FLAG", 7);
+    ST3.addSubfield("ED_STD_STATUS1", "LOW_BATTERY_FLAG", 8);
+    ST3.addSubfield("ED_STD_STATUS1", "LOW_LOSS_POTENTIAL_FLAG", 9);
+    ST3.addSubfield("ED_STD_STATUS1", "DEMAND_OVERLOAD_FLAG", 10);
+    ST3.addSubfield("ED_STD_STATUS1", "POWER_FAILURE_FLAG", 11);
+    ST3.addSubfield("ED_STD_STATUS1", "TAMPER_DETECT_FLAG", 12);
+    ST3.addSubfield("ED_STD_STATUS1", "REVERSE_ROTATION_FLAG", 13);
+    ST3.addField("ED_STD_STATUS2", Table::fieldtype::BITFIELD, 1);
+    ST3.addField("ED_MFG_STATUS", Table::fieldtype::BITFIELD, 1);
+    return ST3;
+}
+
 Table MakeST5() {
     Table ST5{5, "DEVICE_IDENT_TBL"}; 
     ST5.addField("IDENTIFICATION", Table::fieldtype::STRING, 20);
     return ST5;
+}
+
+Table MakeST6() {
+    Table ST6{6, "UTIL_INFO_TBL"}; 
+    ST6.addField("OWNER_NAME", Table::fieldtype::STRING, 20);
+    ST6.addField("UTILITY_DIV", Table::fieldtype::STRING, 20);
+    ST6.addField("SERVICE_POINT_ID", Table::fieldtype::STRING, 20);
+    ST6.addField("ELEC_ADDR", Table::fieldtype::STRING, 20);
+    ST6.addField("DEVICE_ID", Table::fieldtype::STRING, 20);
+    ST6.addField("UTIL_SER_NO", Table::fieldtype::STRING, 20);
+    ST6.addField("CUSTOMER_ID", Table::fieldtype::STRING, 20);
+    ST6.addField("COORDINATE_1", Table::fieldtype::BINARY, 10);
+    ST6.addField("COORDINATE_2", Table::fieldtype::BINARY, 10);
+    ST6.addField("COORDINATE_3", Table::fieldtype::BINARY, 10);
+    ST6.addField("TARIFF_ID", Table::fieldtype::STRING, 8);
+    ST6.addField("EX1_SW_VENDOR", Table::fieldtype::STRING, 4);
+    ST6.addField("EX1_SW_VERSION_NUMBER", Table::fieldtype::UINT, 1);
+    ST6.addField("EX1_SW_REVISION_NUMBER", Table::fieldtype::UINT, 1);
+    ST6.addField("EX2_SW_VENDOR", Table::fieldtype::STRING, 4);
+    ST6.addField("EX2_SW_VERSION_NUMBER", Table::fieldtype::UINT, 1);
+    ST6.addField("EX2_SW_REVISION_NUMBER", Table::fieldtype::UINT, 1);
+    ST6.addField("PROGRAMMER_NAME", Table::fieldtype::STRING, 10);
+    ST6.addField("MISC_ID", Table::fieldtype::STRING, 30);
+    return ST6;
+}
+
+void AppendST20_tail(Table& ST20) {
+    ST20.addField("REG_FUNC1_FLAGS", Table::fieldtype::BITFIELD, 1);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "SEASON_INFO_FIELD_FLAG", 0);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "DATA_TIME_FIELD_FLAG", 1);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "DEMAND_RESET_CTR_FLAG", 2);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "DEMAND_RESET_LOCK_FLAG", 3);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "CUM_DEMAND_FLAG", 4);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "CONT_CUM_DEMAND_FLAG", 5);
+    ST20.addSubfield("REG_FUNC1_FLAGS", "TIME_REMAINING_FLAG", 6);
+    ST20.addField("REG_FUNC2_FLAGS", Table::fieldtype::BITFIELD, 1);
+    ST20.addSubfield("REG_FUNC2_FLAGS", "SELF_READ_INHIBIT_OVERFLOW_FLAG", 0);
+    ST20.addSubfield("REG_FUNC2_FLAGS", "SELF_READ_SEQ_NBR_FLAG", 1);
+    ST20.addSubfield("REG_FUNC2_FLAGS", "DAILY_SELF_READ_FLAG", 2);
+    ST20.addSubfield("REG_FUNC2_FLAGS", "WEEKLY_SELF_READ_FLAG", 3);
+    ST20.addSubfield("REG_FUNC2_FLAGS", "SELF_READ_DEMAND_RESET", 4, 5);
+    ST20.addField("NBR_SELF_READS", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_SUMMATIONS", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_DEMANDS", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_COIN_VALUES", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_OCCUR", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_TIERS", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_PRESENT_DEMANDS", Table::fieldtype::UINT, 1);
+    ST20.addField("NBR_PRESENT_VALUES", Table::fieldtype::UINT, 1);
+}
+
+Table MakeST20() {
+    Table ST20{20, "DIM_REGS_TBL"}; 
+    AppendST20_tail(ST20);
+    return ST20;
+}
+
+Table MakeST21() {
+    Table ST21{21, "ACT_REGS_TBL"}; 
+    AppendST20_tail(ST21);
+    return ST21;
 }
 
 
@@ -243,10 +331,34 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
               ST2.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
+          case 3:
+          { 
+              auto ST3{MakeST3()};
+              ST3.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+          break;
           case 5:
           { 
               auto ST5{MakeST5()};
               ST5.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 6:
+          { 
+              auto ST6{MakeST6()};
+              ST6.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 20:
+          { 
+              auto ST20{MakeST20()};
+              ST20.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 21:
+          { 
+              auto ST21{MakeST21()};
+              ST21.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           default:

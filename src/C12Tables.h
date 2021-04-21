@@ -9,6 +9,8 @@
 #include <optional>
 #include <string>
 
+bool setDataOrder(bool big_endian);
+
 struct Field {
     virtual std::string Name() const = 0;
     virtual std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const = 0;
@@ -117,6 +119,7 @@ public:
     std::size_t value(const uint8_t *tabledata, const std::string& fieldname) const;
     std::optional<std::unique_ptr<Field>> operator[](const std::string &fieldname) const;
     void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
+    void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit);
 private:
     unsigned num = 0;
     std::string name;
