@@ -4,31 +4,37 @@
 #include <iomanip>
 #include <iostream>
 
-static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool little_endian) {
+static bool global_big_endian{false};
+
+bool setDataOrder(bool big_endian) {
+    return global_big_endian = big_endian;
+}
+
+static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool big_endian) {
     unsigned value{0};
-    if (little_endian) {
+    if (big_endian) {
+        for (std::size_t i{0}; i < len; ++i) {
+            value = (value << 8) | *dataptr++;
+        }
+    } else {
         dataptr += len - 1;
         for (std::size_t i{0}; i < len; ++i) {
             value = (value << 8) | *dataptr--;
-        }
-    } else {
-        for (std::size_t i{0}; i < len; ++i) {
-            value = (value << 8) | *dataptr++;
         }
     }
     return value;
 }
 
-UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool little_endian)
+UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool big_endian)
     : name{name}
     , offset{offset}
     , len{len}
-    , little_endian{little_endian}
+    , big_endian{big_endian}
 {
 }
 
 unsigned UINT::operator()(const uint8_t *tabledata) const {
-    return ReadUnsigned(tabledata + offset, len, little_endian);
+    return ReadUnsigned(tabledata + offset, len, big_endian);
 }
 
 std::ostream& UINT::printTo(const uint8_t *tabledata, std::ostream& out) const {
@@ -122,7 +128,7 @@ BITFIELD::BITFIELD(std::string name, std::size_t offset, std::size_t len)
 std::ostream& BITFIELD::printTo(const uint8_t *tabledata, std::ostream& out) const {
     out << "{\n"; 
     for (const auto& sub : subfields) {
-        out << "\t" << sub.Name() << " = " << sub(ReadUnsigned(tabledata + offset, len, false)) << '\n';
+        out << "\t" << sub.Name() << " = " << sub(ReadUnsigned(tabledata + offset, len, global_big_endian)) << '\n';
     }
     return out << "    }";
 }
@@ -134,6 +140,9 @@ BITFIELD::Subfield::Subfield(std::string name, unsigned startbit, unsigned endbi
 {}
 
 unsigned BITFIELD::Subfield::operator()(unsigned fielddata) const {
+    if (name == "DATA_ORDER") {
+        global_big_endian = (fielddata >> shift) & mask;
+    }
     return (fielddata >> shift) & mask;    
 }
 
