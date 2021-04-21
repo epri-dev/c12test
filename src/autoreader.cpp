@@ -287,6 +287,26 @@ Table MakeST21() {
     return ST21;
 }
 
+void AppendST40_tail(Table& ST40) {
+    ST40.addField("NBR_PASSWORDS", Table::fieldtype::UINT, 1);
+    ST40.addField("PASSWORDS_LEN", Table::fieldtype::UINT, 1);
+    ST40.addField("NBR_KEYS", Table::fieldtype::UINT, 1);
+    ST40.addField("KEY_LEN", Table::fieldtype::UINT, 1);
+    ST40.addField("NBR_PERM_USED", Table::fieldtype::UINT, 2);
+}
+
+Table MakeST40() {
+    Table ST40{40, "DIM_SECURITY_LIMITING_TBL"}; 
+    AppendST40_tail(ST40);
+    return ST40;
+}
+
+Table MakeST41() {
+    Table ST41{41, "ACT_SECURITY_LIMITING_TBL"}; 
+    AppendST40_tail(ST41);
+    return ST41;
+}
+
 
 void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
@@ -359,6 +379,18 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
           { 
               auto ST21{MakeST21()};
               ST21.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 40:
+          { 
+              auto ST40{MakeST40()};
+              ST40.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 41:
+          { 
+              auto ST41{MakeST41()};
+              ST41.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           default:
