@@ -361,6 +361,39 @@ Table MakeST52() {
     return ST52;
 }
 
+Table MakeST55() {
+    Table ST55{55, "CLOCK_STATE_TBL"};
+    // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
+    //ST55.addField("CLOCK_CALENDAR", ltimedate);
+    ST55.addField("CLOCK_CALENDAR.YEAR", Table::fieldtype::UINT, 1);
+    ST55.addField("CLOCK_CALENDAR.MONTH", Table::fieldtype::UINT, 1);
+    ST55.addField("CLOCK_CALENDAR.DAY", Table::fieldtype::UINT, 1);
+    ST55.addField("CLOCK_CALENDAR.HOUR", Table::fieldtype::UINT, 1);
+    ST55.addField("CLOCK_CALENDAR.MINUTE", Table::fieldtype::UINT, 1);
+    ST55.addField("CLOCK_CALENDAR.SECOND", Table::fieldtype::UINT, 1);
+    ST55.addField("TIME_DATE_QUAL", Table::fieldtype::BITFIELD, 1);
+    ST55.addSubfield("TIME_DATE_QUAL", "DAY_OF_WEEK", 0, 2);
+    ST55.addSubfield("TIME_DATE_QUAL", "DST_FLAG", 3);
+    ST55.addSubfield("TIME_DATE_QUAL", "GMT_FLAG", 4);
+    ST55.addSubfield("TIME_DATE_QUAL", "DST_APPLIED_FLAG", 6);
+    ST55.addField("STATUS", Table::fieldtype::BITFIELD, 2);
+    // only valid when ACT_TIME_TOU_TBL>SEPARATE_SUM_DEMANDS_FLAG is false
+    ST55.addSubfield("STATUS", "CURR_TIER", 0, 2);
+    // ENDIF
+    ST55.addSubfield("STATUS", "TIER_DRIVE", 6, 7);
+    ST55.addSubfield("STATUS", "SPECIAL_SCHD_ACTIVE", 8, 11);
+    ST55.addSubfield("STATUS", "SEASON", 12, 15);
+    return ST55;
+}
+
+Table MakeST56() {
+    Table ST56{56, "TIME_REMAIN_TBL"};
+    // only valid when ACT_TIME_TOU_TBL>SEPARATE_SUM_DEMANDS_FLAG is false
+    ST56.addField("TIER_TIME_REMAIN", Table::fieldtype::UINT, 2);
+    ST56.addField("SELF_READ_DAYS_REMAIN", Table::fieldtype::UINT, 1);
+    // ENDIF
+    return ST56;
+}
 
 void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
@@ -463,6 +496,18 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
           {
               auto ST52{MakeST52()};
               ST52.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 55:
+          {
+              auto ST55{MakeST55()};
+              ST55.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 56:
+          {
+              auto ST56{MakeST56()};
+              ST56.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           default:
