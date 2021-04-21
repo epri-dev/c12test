@@ -395,6 +395,57 @@ Table MakeST56() {
     return ST56;
 }
 
+void AppendST60_tail(Table& ST60) {
+    ST60.addField("LP_MEMORY_LEN", Table::fieldtype::UINT, 4);
+    ST60.addField("LP_FLAGS", Table::fieldtype::BITFIELD, 2);
+    ST60.addSubfield("LP_FLAGS", "LP_SET1_INHIBIT_OVF_FLAG", 0);
+    ST60.addSubfield("LP_FLAGS", "LP_SET2_INHIBIT_OVF_FLAG", 1);
+    ST60.addSubfield("LP_FLAGS", "LP_SET3_INHIBIT_OVF_FLAG", 2);
+    ST60.addSubfield("LP_FLAGS", "LP_SET4_INHIBIT_OVF_FLAG", 3);
+    ST60.addSubfield("LP_FLAGS", "BLK_END_READ_FLAG", 4);
+    ST60.addSubfield("LP_FLAGS", "BLK_END_PULSE_FLAG", 5);
+    ST60.addSubfield("LP_FLAGS", "SCALAR_DIVISOR_FLAG_SET1", 6);
+    ST60.addSubfield("LP_FLAGS", "SCALAR_DIVISOR_FLAG_SET2", 7);
+    ST60.addSubfield("LP_FLAGS", "SCALAR_DIVISOR_FLAG_SET3", 8);
+    ST60.addSubfield("LP_FLAGS", "SCALAR_DIVISOR_FLAG_SET4", 9);
+    ST60.addSubfield("LP_FLAGS", "EXTENDED_INT_STATUS_FLAG", 10);
+    ST60.addSubfield("LP_FLAGS", "SIMPLE_INT_STATUS_FLAG", 11);
+    ST60.addSubfield("LP_FLAGS", "BLK_END_RD_INDICATOR_FLAG", 12);
+    ST60.addField("LP_FMATS", Table::fieldtype::BITFIELD, 1);
+    ST60.addSubfield("LP_FMATS", "INV_UINT8_FLAG", 0);
+    ST60.addSubfield("LP_FMATS", "INV_UINT16_FLAG", 1);
+    ST60.addSubfield("LP_FMATS", "INV_UINT32_FLAG", 2);
+    ST60.addSubfield("LP_FMATS", "INV_INT8_FLAG", 3);
+    ST60.addSubfield("LP_FMATS", "INV_INT16_FLAG", 4);
+    ST60.addSubfield("LP_FMATS", "INV_INT32_FLAG", 5);
+    ST60.addSubfield("LP_FMATS", "INV_NI_FMAT1_FLAG", 6);
+    ST60.addSubfield("LP_FMATS", "INV_NI_FMAT2_FLAG", 7);
+    // if ST64 is present
+    ST60.addField("NBR_BLKS_SET1", Table::fieldtype::UINT, 2);
+    ST60.addField("NBR_BLK_INTS_SET1", Table::fieldtype::UINT, 2);
+    ST60.addField("NBR_CHNS_SET1", Table::fieldtype::UINT, 1);
+    ST60.addField("MAX_INT_TIME_SET1", Table::fieldtype::UINT, 1);
+    // if ST65 is present
+#if ENABLEST65
+    ST60.addField("NBR_BLKS_SET2", Table::fieldtype::UINT, 2);
+    ST60.addField("NBR_BLK_INTS_SET2", Table::fieldtype::UINT, 2);
+    ST60.addField("NBR_CHNS_SET2", Table::fieldtype::UINT, 1);
+    ST60.addField("MAX_INT_TIME_SET2", Table::fieldtype::UINT, 1);
+#endif
+}
+
+Table MakeST60() {
+    Table ST60{60, "DIM_LP_TBL"};
+    AppendST60_tail(ST60);
+    return ST60;
+}
+
+Table MakeST61() {
+    Table ST61{61, "ACT_LP_TBL"};
+    AppendST60_tail(ST61);
+    return ST61;
+}
+
 void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
    auto it = tables.begin();
@@ -508,6 +559,18 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
           {
               auto ST56{MakeST56()};
               ST56.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 60:
+          {
+              auto ST60{MakeST60()};
+              ST60.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 61:
+          {
+              auto ST61{MakeST61()};
+              ST61.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           default:
