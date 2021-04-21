@@ -93,14 +93,12 @@ SET::SET(std::string name, std::size_t offset, std::size_t len)
 
 std::vector<bool> SET::operator()(const uint8_t *tabledata) const {
     std::vector<bool> v;
+    tabledata += offset;
     auto end = tabledata + len;
     v.reserve(len * 8);
     for (auto count{len}; tabledata < end; ++tabledata) {
-        for (uint8_t mask{1}; mask; mask <<= 1) {
-            if (count--)
-                v.push_back(*tabledata & mask);
-            else
-                break;
+        for (uint8_t mask{1u}; mask; mask <<= 1) {
+            v.push_back(*tabledata & mask);
         }
     }
     return v;
