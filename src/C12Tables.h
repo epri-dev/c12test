@@ -6,12 +6,14 @@
 #include <vector>
 #include <iostream>
 #include <initializer_list>
+#include <optional>
 #include <string>
 
 struct Field {
     virtual std::string Name() const = 0;
     virtual std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const = 0;
     virtual unsigned value(const uint8_t *) const { return 0; }
+    virtual std::unique_ptr<Field> clone() const = 0;
 };
 
 class UINT : public Field {
@@ -21,6 +23,9 @@ public:
     unsigned operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
     unsigned value(const uint8_t *tbldata) const override { return operator()(tbldata); }
+    std::unique_ptr<Field> clone() const override { 
+        return std::unique_ptr<Field>(new UINT{*this});
+    }
 private:
     std::string name;
     std::size_t offset;
@@ -34,6 +39,9 @@ public:
     BINARY(std::string name, std::size_t offset, std::size_t len=1);
     std::vector<uint8_t> operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
+    std::unique_ptr<Field> clone() const override { 
+        return std::unique_ptr<Field>(new BINARY{*this});
+    }
 private:
     std::string name;
     std::size_t offset;
@@ -46,6 +54,9 @@ public:
     STRING(std::string name, std::size_t offset, std::size_t len=1);
     std::vector<uint8_t> operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
+    std::unique_ptr<Field> clone() const override { 
+        return std::unique_ptr<Field>(new STRING{*this});
+    }
 private:
     std::string name;
     std::size_t offset;
@@ -58,6 +69,9 @@ public:
     SET(std::string name, std::size_t offset, std::size_t len=1);
     std::vector<bool> operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
+    std::unique_ptr<Field> clone() const override { 
+        return std::unique_ptr<Field>(new SET{*this});
+    }
 private:
     std::string name;
     std::size_t offset;
@@ -72,7 +86,7 @@ public:
     std::ostream& printTo(const std::string& str, std::ostream& out) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const;
     std::size_t value(const uint8_t *tabledata, const std::string& fieldname) const;
-    std::ostream& printFieldTo(const uint8_t *tabledata, std::ostream& out, std::string fieldname) const;
+    std::optional<std::unique_ptr<Field>> operator[](const std::string &fieldname) const;
 private:
     unsigned num = 0;
     std::string name;

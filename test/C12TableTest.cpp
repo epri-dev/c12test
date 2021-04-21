@@ -46,10 +46,10 @@ Table MakeST0(const uint8_t *tabledata) {
     return ST0;
 }
 
-TEST(C12TableTest, testBasicTable) {
+TEST(C12TableTest, testTableFieldRef) {
     auto ST0 = MakeST0(st0.data());
     std::stringstream ss;
-    ST0.printFieldTo(st0.data(), ss, "DEVICE_CLASS");
+    ST0["DEVICE_CLASS"].value()->printTo(st0.data(), ss);
     std::string s{ss.str()};
     EXPECT_EQ(s, "\"EE  \"");
 }

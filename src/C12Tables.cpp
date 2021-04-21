@@ -131,15 +131,6 @@ std::ostream& Table::printTo(const std::string& str, std::ostream& out) const {
     return printTo(reinterpret_cast<const uint8_t *>(str.data()), out);
 }
 
-std::ostream& Table::printFieldTo(const uint8_t *tabledata, std::ostream& out, std::string fieldname) const {
-    for (const auto& fld: *this) {
-        if (fld->Name() == fieldname) {
-            fld->printTo(tabledata, out);
-        }
-    }
-    return out;
-}
-
 std::size_t Table::value(const uint8_t *tabledata, const std::string& fieldname) const {
     // find the field
     for (const auto& fld: *this) {
@@ -158,3 +149,13 @@ std::ostream& Table::printTo(const uint8_t *tabledata, std::ostream& out) const 
     }
     return out << '\n';
 }
+
+std::optional<std::unique_ptr<Field>> Table::operator[](const std::string &fieldname) const {
+    for (const auto& fld: *this) {
+        if (fld->Name() == fieldname) {
+            return std::optional<std::unique_ptr<Field>>{fld->clone()};
+        }
+    }
+    return std::nullopt;
+}
+
