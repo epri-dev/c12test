@@ -4,33 +4,31 @@
 #include <iomanip>
 #include <iostream>
 
-static bool endian{false};
-
-static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool big_endian) {
+static unsigned ReadUnsigned(const uint8_t *dataptr, std::size_t len, bool little_endian) {
     unsigned value{0};
-    if (big_endian) {
-        for (std::size_t i{0}; i < len; ++i) {
-            value = (value << 8) | *dataptr++;
-        }
-    } else {
+    if (little_endian) {
         dataptr += len - 1;
         for (std::size_t i{0}; i < len; ++i) {
             value = (value << 8) | *dataptr--;
+        }
+    } else {
+        for (std::size_t i{0}; i < len; ++i) {
+            value = (value << 8) | *dataptr++;
         }
     }
     return value;
 }
 
-UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool big_endian)
+UINT::UINT(std::string name, std::size_t offset, std::size_t len, bool little_endian)
     : name{name}
     , offset{offset}
     , len{len}
-    , big_endian{big_endian}
+    , little_endian{little_endian}
 {
 }
 
 unsigned UINT::operator()(const uint8_t *tabledata) const {
-    return ReadUnsigned(tabledata + offset, len, big_endian);
+    return ReadUnsigned(tabledata + offset, len, little_endian);
 }
 
 std::ostream& UINT::printTo(const uint8_t *tabledata, std::ostream& out) const {
@@ -124,7 +122,6 @@ BITFIELD::BITFIELD(std::string name, std::size_t offset, std::size_t len)
 std::ostream& BITFIELD::printTo(const uint8_t *tabledata, std::ostream& out) const {
     out << "{\n"; 
     for (const auto& sub : subfields) {
-// TODO: add proper support for endian-ness
         out << "\t" << sub.Name() << " = " << sub(ReadUnsigned(tabledata + offset, len, false)) << '\n';
     }
     return out << "    }";

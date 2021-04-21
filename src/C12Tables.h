@@ -20,7 +20,7 @@ struct Field {
 class UINT : public Field {
 public:
     std::string Name() const override { return name; }
-    UINT(std::string name, std::size_t offset, std::size_t len=1, bool big_endian=true);
+    UINT(std::string name, std::size_t offset, std::size_t len=1, bool little_endian=true);
     unsigned operator()(const uint8_t *tabledata) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const override;
     unsigned value(const uint8_t *tbldata) const override { return operator()(tbldata); }
@@ -31,7 +31,7 @@ private:
     std::string name;
     std::size_t offset;
     std::size_t len;
-    bool big_endian;
+    bool little_endian;
 };
 
 class BINARY : public Field {
@@ -114,6 +114,7 @@ public:
     std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize);
     std::ostream& printTo(const std::string& str, std::ostream& out) const;
     std::ostream& printTo(const uint8_t *tabledata, std::ostream& out) const;
+    std::size_t value(const uint8_t *tabledata, const std::string& fieldname) const;
     std::optional<std::unique_ptr<Field>> operator[](const std::string &fieldname) const;
     void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
 private:
