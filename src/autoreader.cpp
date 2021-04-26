@@ -446,6 +446,59 @@ Table MakeST61() {
     return ST61;
 }
 
+void AppendST70_tail(Table& ST70) {
+    ST70.addField("LOG_FLAGS", Table::fieldtype::BITFIELD, 2);
+    ST70.addSubfield("LOG_FLAGS", "EVENT_NUMBER_FLAG", 0);
+    ST70.addSubfield("LOG_FLAGS", "HIST_DATE_TIME_FLAG", 1);
+    ST70.addSubfield("LOG_FLAGS", "HIST_SEQ_NBR_FLAG", 2);
+    ST70.addSubfield("LOG_FLAGS", "HIST_INHIBIT_OVF_FLAG", 3);
+    ST70.addSubfield("LOG_FLAGS", "EVENT_INHIBIT_OVF_FLAG", 4);
+    ST70.addField("NBR_STD_EVENTS", Table::fieldtype::UINT, 1);
+    ST70.addField("NBR_MFG_EVENTS", Table::fieldtype::UINT, 1);
+    ST70.addField("HIST_DATA_LENGTH", Table::fieldtype::UINT, 1);
+    ST70.addField("EVENT_DATA_LENGTH", Table::fieldtype::UINT, 1);
+    ST70.addField("NBR_HISTORY_ENTRIES", Table::fieldtype::UINT, 2);
+    ST70.addField("NBR_EVENT_ENTRIES", Table::fieldtype::UINT, 2);
+}
+
+Table MakeST70() {
+    Table ST70{70, "DIM_LOG_TBL"};
+    AppendST70_tail(ST70);
+    return ST70;
+}
+
+Table MakeST71() {
+    Table ST71{71, "ACT_LOG_TBL"};
+    AppendST70_tail(ST71);
+    return ST71;
+}
+
+Table MakeST72() {
+    Table ST72{72, "EVENTS_ID_TBL"};
+    // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
+    ST72.addField("STD_EVENTS_SUPPORTED", Table::fieldtype::SET, 1);
+    // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
+    ST72.addField("MFG_EVENTS_SUPPORTED", Table::fieldtype::SET, 2);
+    return ST72;
+}
+
+Table MakeST73() {
+    Table ST73{73, "EVENTS_ID_TBL"};
+    // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
+    ST73.addField("STD_EVENTS_MONITORED_FLAGS", Table::fieldtype::SET, 1);
+    // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
+    ST73.addField("MFG_EVENTS_MONITORED_FLAGS", Table::fieldtype::SET, 2);
+    // TODO: actual length is GEN_CONFIG_TBL.DIM_STD_TBLS_USED
+    ST73.addField("STD_TBLS_MONITORED_FLAGS", Table::fieldtype::SET, 13);
+    // TODO: actual length is GEN_CONFIG_TBL.DIM_MFG_TBLS_USED
+    ST73.addField("MFG_TBLS_MONITORED_FLAGS", Table::fieldtype::SET, 13);
+    // TODO: actual length is GEN_CONFIG_TBL.DIM_STD_PROC_USED
+    ST73.addField("STD_PROC_MONITORED_FLAGS", Table::fieldtype::SET, 3);
+    // TODO: actual length is GEN_CONFIG_TBL.DIM_MFG_PROC_USED
+    ST73.addField("MFG_PROC_MONITORED_FLAGS", Table::fieldtype::SET, 5);
+    return ST73;
+}
+
 void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
    auto it = tables.begin();
@@ -571,6 +624,30 @@ void GetResults(MProtocol& proto, const MStdStringVector& tables)
           {
               auto ST61{MakeST61()};
               ST61.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 70:
+          {
+              auto ST70{MakeST70()};
+              ST70.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 71:
+          {
+              auto ST71{MakeST71()};
+              ST71.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 72:
+          {
+              auto ST72{MakeST72()};
+              ST72.printTo(proto.QGetTableData(itemInt, count), std::cout);
+          }
+            break;
+          case 73:
+          {
+              auto ST73{MakeST73()};
+              ST73.printTo(proto.QGetTableData(itemInt, count), std::cout);
           }
             break;
           default:
