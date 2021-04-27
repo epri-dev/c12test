@@ -126,6 +126,8 @@ static void Communicate(MProtocol& proto, const MStdStringVector& tables)
    CommitCommunication(proto);
 }
 
+using namespace C12;
+
 Table MakeST0(const uint8_t *tabledata) {
     Table ST0{0, "GEN_CONFIG_TBL"};
     ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
