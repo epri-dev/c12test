@@ -11,3 +11,35 @@
 # Build results
 out/
 .vs/
+
+# build output
+.libs
+.deps
+.dirstamp
+*.o
+*.obj
+*.pp
+*.o.??????
+*.a
+*.lo
+*.la
+*.iso
+Debug
+Release
+*.opensdf
+*.sdf
+*.suo
+*.old
+VisualGDBCache
+CodeDB
+build
+
+# editor files
+*.swp
+
+# coexist with quilt
+patches
+*.patch
+
+# ctags tag files
+tags
