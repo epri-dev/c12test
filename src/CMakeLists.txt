@@ -5,12 +5,11 @@ target_compile_features(C12Tables PUBLIC cxx_std_17)
 add_executable(${EXECUTABLE_NAME} autoreader.cpp Setup.cpp)
 if (MSVC)
     # warning level 4 and all warnings as errors
-    target_compile_options(${EXECUTABLE_NAME} PRIVATE "/W4 /WX")
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE "/W4;/WX")
 else()
     # lots of warnings and all warnings as errors
     target_compile_options(${EXECUTABLE_NAME} PRIVATE "-Wall;-Wextra;-Wno-expansion-to-defined")
 endif()
-add_subdirectory(src)
 target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17)
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${METERINGSDK_INCLUDE_DIR} ${METERINGSDK_BINARY_DIR})
 target_link_libraries(${EXECUTABLE_NAME} MCOM MCORE C12Tables) 
