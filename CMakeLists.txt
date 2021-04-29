@@ -39,9 +39,11 @@ endif()
 
 # options off-by-default that you can enable
 option(BUILD_DOCS "Build the documentation" OFF)
+option(BUILD_TESTING "Build test suite" OFF)
 
 # options on-by-default that you can disable
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
 
 if (BUILD_DOCS)
     add_subdirectory(doc)
