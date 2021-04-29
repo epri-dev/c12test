@@ -27,6 +27,7 @@ if(NOT ${lcName}_POPULATED)
     set(M_COMPANY_NAME "EPRI")
     set(M_PRODUCT_LEGAL_COPYRIGHT "EPRI")
     set(M_PRODUCT_VERSION    ${PROJECT_VERSION})
+    set(M_NO_AUTOMATION 1)
     set(METERINGSDK_INCLUDE_DIR "${${lcName}_SOURCE_DIR}/src/MeteringSDK")
     include_directories("${${lcName}_BINARY_DIR}/MeteringSDK")
     # put libraries where we can find them and link to them
