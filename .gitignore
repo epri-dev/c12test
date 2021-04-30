@@ -36,6 +36,7 @@ build
 
 # editor files
 *.swp
+*~
 
 # coexist with quilt
 patches
