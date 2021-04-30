@@ -19,6 +19,8 @@ static std::basic_string<uint8_t> st0{
      0x19,0x67,0x10,0x00, 0x82,0xF5,0xE0,
 };
 
+using namespace C12;
+
 Table MakeST0(const uint8_t *tabledata) {
     Table ST0{0, "GEN_CONFIG_TBL"}; 
     ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
