@@ -1,5 +1,5 @@
-#ifndef READER_SETUP_H
-#define READER_SETUP_H
+#ifndef SETUP_H
+#define SETUP_H
 
 #include <MCOM/MCOM.h>
 
@@ -54,4 +54,4 @@ private:
    bool             m_verbose;
 };
 
-#endif
+#endif // SETUP_H
