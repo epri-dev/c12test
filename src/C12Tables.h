@@ -138,8 +138,6 @@ namespace C12 {
  * a human and machine readable format.
  *
  * The document syntax form of standard table 0 is shown below.
- * Following that is an XML representation that would allow for
- * web representation.
  */
 
 /*
