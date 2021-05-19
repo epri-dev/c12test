@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 find_package(Doxygen 1.8.16)
 set(MD_SOURCES 01_intro.md 02_building.md)
 set(IMAGE_PATH "images")
+set(PROJECT_BRIEF "Universal ANSI C12 Tester")
 set(DEST_IMAGE_PATH "${CMAKE_BINARY_DIR}/${IMAGE_PATH}")
 if(DOXYGEN_FOUND)
     configure_file(
