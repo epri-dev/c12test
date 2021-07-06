@@ -19,8 +19,8 @@ class InterruptHandler          // this is actually a singleton
 
     static void MyInterruptHandler(int) {
         s_isInterrupted = true;
- } public:
-
+     } 
+ public:
     static bool IsInterrupted() {
         return s_isInterrupted;
     }
@@ -40,14 +40,13 @@ class InterruptHandler          // this is actually a singleton
 };
 
 bool InterruptHandler::s_isInterrupted = false;
-InterruptHandler::SignalHandlerType InterruptHandler::
-    s_previousInterruptHandler = nullptr;
+InterruptHandler::SignalHandlerType InterruptHandler::s_previousInterruptHandler = nullptr;
 static InterruptHandler s_interruptHandler;
 
 unsigned failures = 0;
 unsigned linkLayerRetries = 0;
 
-static void CommitCommunication(MProtocol & proto)
+static void CommitCommunication(MProtocol& proto)
 {
     proto.QCommit(true);
     while (!proto.QIsDone()) {
@@ -89,9 +88,7 @@ void ReadItem(MProtocol & proto, MStdString item, unsigned count)
                     closingBrace - openingBrace - 1;
                 if (requestSize > 0)
                     request =
-                        MUtilities::HexStringToBytes(item.
-                                                     substr(openingBrace + 1,
-                                                            requestSize));
+                        MUtilities::HexStringToBytes(item.substr(openingBrace + 1, requestSize));
                 proto.QFunctionExecuteRequestResponse(itemInt, request, count);
             } else
                 MException::Throw("Only prefixes supported are ST, MT, SF, MF");
@@ -106,21 +103,20 @@ void ReadItem(MProtocol & proto, MStdString item, unsigned count)
     }
 }
 
-static void Communicate(MProtocol & proto, const MStdStringVector & tables)
+static void Communicate(MProtocol& proto, const MStdStringVector& tables)
 {
     proto.QConnect();
     proto.QStartSession();
 
-    int count {
-    1};
- for (const auto & item:tables)
+    int count {1};
+    for (const auto & item:tables)
         ReadItem(proto, item, count++);
 
     proto.QEndSession();
     CommitCommunication(proto);
 }
 
-void GetResults(MProtocol & proto, const MStdStringVector & tables)
+void GetResults(MProtocol& proto, const MStdStringVector& tables)
 {
     auto it = tables.begin();
     for (int count = 1; it != tables.cend(); ++it, ++count) {
@@ -146,148 +142,127 @@ void GetResults(MProtocol & proto, const MStdStringVector & tables)
                 proto.QGetTableData(itemInt, count)};
                 const uint8_t *ptr =
                     reinterpret_cast < const uint8_t * >(table.data());
-                auto ST0 {
-                MakeST0(ptr)};
+                auto ST0{MakeST0(ptr)};
                 ST0.printTo(ptr, std::cout);
             }
             break;
         case 1:
             {
-                auto ST1 {
-                MakeST1()};
+                auto ST1{MakeST1()};
                 ST1.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 2:
             {
-                auto ST2 {
-                MakeST2()};
+                auto ST2{MakeST2()};
                 ST2.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 3:
             {
-                auto ST3 {
-                MakeST3()};
+                auto ST3{MakeST3()};
                 ST3.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 5:
             {
-                auto ST5 {
-                MakeST5()};
+                auto ST5{MakeST5()};
                 ST5.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 6:
             {
-                auto ST6 {
-                MakeST6()};
+                auto ST6{MakeST6()};
                 ST6.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 20:
             {
-                auto ST20 {
-                MakeST20()};
+                auto ST20{MakeST20()};
                 ST20.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 21:
             {
-                auto ST21 {
-                MakeST21()};
+                auto ST21{MakeST21()};
                 ST21.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 40:
             {
-                auto ST40 {
-                MakeST40()};
+                auto ST40{MakeST40()};
                 ST40.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 41:
             {
-                auto ST41 {
-                MakeST41()};
+                auto ST41{MakeST41()};
                 ST41.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 50:
             {
-                auto ST50 {
-                MakeST50()};
+                auto ST50{MakeST50()};
                 ST50.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 51:
             {
-                auto ST51 {
-                MakeST51()};
+                auto ST51{MakeST51()};
                 ST51.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 52:
             {
-                auto ST52 {
-                MakeST52()};
+                auto ST52{MakeST52()};
                 ST52.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 55:
             {
-                auto ST55 {
-                MakeST55()};
+                auto ST55{MakeST55()};
                 ST55.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 56:
             {
-                auto ST56 {
-                MakeST56()};
+                auto ST56{MakeST56()};
                 ST56.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 60:
             {
-                auto ST60 {
-                MakeST60()};
+                auto ST60{MakeST60()};
                 ST60.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 61:
             {
-                auto ST61 {
-                MakeST61()};
+                auto ST61{MakeST61()};
                 ST61.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 70:
             {
-                auto ST70 {
-                MakeST70()};
+                auto ST70{MakeST70()};
                 ST70.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 71:
             {
-                auto ST71 {
-                MakeST71()};
+                auto ST71{MakeST71()};
                 ST71.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 72:
             {
-                auto ST72 {
-                MakeST72()};
+                auto ST72{MakeST72()};
                 ST72.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
         case 73:
             {
-                auto ST73 {
-                MakeST73()};
+                auto ST73{MakeST73()};
                 ST73.printTo(proto.QGetTableData(itemInt, count), std::cout);
             }
             break;
@@ -308,7 +283,7 @@ void GetResults(MProtocol & proto, const MStdStringVector & tables)
     proto.WriteToMonitor(str);
 }
 
-int main(int argc, char *argv**)
+int main(int argc, char *argv[])
 {
     Setup setup;
     if (!setup.Initialize(argc, argv))
