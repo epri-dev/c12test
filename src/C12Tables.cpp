@@ -3,6 +3,7 @@
 #include <iterator>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 static bool global_big_endian{false};
 
@@ -28,6 +29,12 @@ namespace C12 {
         return value;
     }
 
+    std::string Field::to_string(const uint8_t* tabledata) const {
+        std::stringstream ss;
+        printTo(tabledata, ss);
+        return ss.str();
+    }
+
     UINT::UINT(std::string name, std::size_t offset, std::size_t len)
         : name{ name }
         , offset{ offset }
@@ -41,6 +48,11 @@ namespace C12 {
 
     std::ostream& UINT::printTo(const uint8_t* tabledata, std::ostream& out) const {
         return out << operator()(tabledata);
+    }
+
+    // we define a more efficient version of to_string() for UINT
+    std::string UINT::to_string(const uint8_t* tabledata) const {
+        return std::to_string(operator()(tabledata));
     }
 
     BINARY::BINARY(std::string name, std::size_t offset, std::size_t len)
@@ -70,6 +82,14 @@ namespace C12 {
         , offset{ offset }
         , len{ len }
     {
+    }
+
+    // we define a more efficient version of to_string() for STRING
+    std::string STRING::to_string(const uint8_t* tabledata) const {
+        std::string s;
+        s.reserve(len);
+        std::copy(tabledata + offset, tabledata + offset + len, s.begin());
+        return s;
     }
 
     std::vector<uint8_t> STRING::operator()(const uint8_t* tabledata) const {
@@ -150,10 +170,22 @@ namespace C12 {
         subfields.emplace_back(Subfield{ name, startbit, endbit });
     }
 
+    Record::Record(std::string name) 
+        : name{ name }
+    {
+    }
+
 
     Table::Table(unsigned number, std::string name)
         : num{ number }
         , name{ name }
+    {
+    }
+
+    Table::Table(unsigned number, std::string name, std::string data)
+        : num{ number }
+        , name{ name }
+        , data{ data.begin(), data.end() }
     {
     }
 
@@ -192,11 +224,30 @@ namespace C12 {
         return 0;
     }
 
+    std::size_t Table::value(const std::string& fieldname) const {
+        // find the field
+        for (const auto& fld : *this) {
+            if (fld->Name() == fieldname) {
+                return fld->value(static_cast<const uint8_t *>(data.data()));
+            }
+        }
+        return 0;
+    }
+
     std::ostream& Table::printTo(const uint8_t* tabledata, std::ostream& out) const {
         out << "TABLE " << num << ' ' << name;
         for (const auto& fld : *this) {
             out << "\n    " << fld->Name() << " = ";
             fld->printTo(tabledata, out);
+        }
+        return out << '\n';
+    }
+
+    std::ostream& Table::printTo(std::ostream& out) const {
+        out << "TABLE " << num << ' ' << name;
+        for (const auto& fld : *this) {
+            out << "\n    " << fld->Name() << " = ";
+            fld->printTo(static_cast<const uint8_t *>(data.data()), out);
         }
         return out << '\n';
     }

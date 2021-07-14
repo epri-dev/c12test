@@ -1,4 +1,7 @@
 #include "C12Meter.h"
+#include <cctype>
+#include <regex>
+#include <signal.h>
 
 static void AppendST20_tail(C12::Table& ST20);
 static void AppendST40_tail(C12::Table& ST40);
@@ -6,8 +9,8 @@ static void AppendST50_tail(C12::Table& ST50);
 static void AppendST60_tail(C12::Table& ST60);
 static void AppendST70_tail(C12::Table& ST70);
 
-C12::Table MakeST0(const uint8_t *tabledata) {
-    C12::Table ST0{0, "GEN_CONFIG_TBL"};
+C12::Table MakeST0(std::string tbldata) {
+    C12::Table ST0{0, "GEN_CONFIG_TBL", tbldata};
     ST0.addField("FORMAT_CONTROL_1", C12::Table::fieldtype::BITFIELD, 1);
     ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
     ST0.addSubfield("FORMAT_CONTROL_1", "CHAR_FORMAT", 1, 3);
@@ -33,17 +36,17 @@ C12::Table MakeST0(const uint8_t *tabledata) {
     ST0.addField("DIM_MFG_PROC_USED", C12::Table::fieldtype::UINT, 1);
     ST0.addField("DIM_MFG_STATUS_USED", C12::Table::fieldtype::UINT, 1);
     ST0.addField("NBR_PENDING", C12::Table::fieldtype::UINT, 1);
-    ST0.addField("STD_TBLS_USED", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
-    ST0.addField("MFG_TBLS_USED", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
-    ST0.addField("STD_PROC_USED", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_PROC_USED"));
-    ST0.addField("MFG_PROC_USED", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_PROC_USED"));
-    ST0.addField("STD_TBLS_WRITE", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
-    ST0.addField("MFG_TBLS_WRITE", C12::Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_TBLS_USED", C12::Table::fieldtype::SET, ST0.value("DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_USED", C12::Table::fieldtype::SET, ST0.value("DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_PROC_USED", C12::Table::fieldtype::SET, ST0.value("DIM_STD_PROC_USED"));
+    ST0.addField("MFG_PROC_USED", C12::Table::fieldtype::SET, ST0.value("DIM_MFG_PROC_USED"));
+    ST0.addField("STD_TBLS_WRITE", C12::Table::fieldtype::SET, ST0.value("DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_WRITE", C12::Table::fieldtype::SET, ST0.value("DIM_MFG_TBLS_USED"));
     return ST0;
 }
 
-C12::Table MakeST1() {
-    C12::Table ST1{1, "GENERAL_MFG_ID_TBL"};
+C12::Table MakeST1(std::string tbldata) {
+    C12::Table ST1{1, "GENERAL_MFG_ID_TBL", tbldata};
     ST1.addField("MANUFACTURER", C12::Table::fieldtype::STRING, 4);
     ST1.addField("ED_MODEL", C12::Table::fieldtype::STRING, 8);
     ST1.addField("HW_VERSION_NUMBER", C12::Table::fieldtype::UINT, 1);
@@ -54,8 +57,8 @@ C12::Table MakeST1() {
     return ST1;
 }
 
-C12::Table MakeST2() {
-    C12::Table ST2{2, "DEVICE_NAMEPLATE_TBL"};
+C12::Table MakeST2(std::string tbldata) {
+    C12::Table ST2{2, "DEVICE_NAMEPLATE_TBL", tbldata};
     ST2.addField("E_KH", C12::Table::fieldtype::STRING, 6);
     ST2.addField("E_KT", C12::Table::fieldtype::STRING, 6);
     ST2.addField("E_INPUT_SCALAR", C12::Table::fieldtype::UINT, 1);
@@ -73,8 +76,8 @@ C12::Table MakeST2() {
     return ST2;
 }
 
-C12::Table MakeST3() {
-    C12::Table ST3{3, "ED_MODE_STATUS_TBL"};
+C12::Table MakeST3(std::string tbldata) {
+    C12::Table ST3{3, "ED_MODE_STATUS_TBL", tbldata};
     ST3.addField("ED_MODE", C12::Table::fieldtype::BITFIELD, 1);
     ST3.addSubfield("ED_MODE", "METERING_FLAG", 0);
     ST3.addSubfield("ED_MODE", "TEST_MODE_FLAG", 1);
@@ -100,14 +103,14 @@ C12::Table MakeST3() {
     return ST3;
 }
 
-C12::Table MakeST5() {
-    C12::Table ST5{5, "DEVICE_IDENT_TBL"};
+C12::Table MakeST5(std::string tbldata) {
+    C12::Table ST5{5, "DEVICE_IDENT_TBL", tbldata};
     ST5.addField("IDENTIFICATION", C12::Table::fieldtype::STRING, 20);
     return ST5;
 }
 
-C12::Table MakeST6() {
-    C12::Table ST6{6, "UTIL_INFO_TBL"};
+C12::Table MakeST6(std::string tbldata) {
+    C12::Table ST6{6, "UTIL_INFO_TBL", tbldata};
     ST6.addField("OWNER_NAME", C12::Table::fieldtype::STRING, 20);
     ST6.addField("UTILITY_DIV", C12::Table::fieldtype::STRING, 20);
     ST6.addField("SERVICE_POINT_ID", C12::Table::fieldtype::STRING, 20);
@@ -155,14 +158,14 @@ void AppendST20_tail(C12::Table& ST20) {
     ST20.addField("NBR_PRESENT_VALUES", C12::Table::fieldtype::UINT, 1);
 }
 
-C12::Table MakeST20() {
-    C12::Table ST20{20, "DIM_REGS_TBL"};
+C12::Table MakeST20(std::string tbldata) {
+    C12::Table ST20{20, "DIM_REGS_TBL", tbldata};
     AppendST20_tail(ST20);
     return ST20;
 }
 
-C12::Table MakeST21() {
-    C12::Table ST21{21, "ACT_REGS_TBL"};
+C12::Table MakeST21(std::string tbldata) {
+    C12::Table ST21{21, "ACT_REGS_TBL", tbldata};
     AppendST20_tail(ST21);
     return ST21;
 }
@@ -175,14 +178,14 @@ void AppendST40_tail(C12::Table& ST40) {
     ST40.addField("NBR_PERM_USED", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST40() {
-    C12::Table ST40{40, "DIM_SECURITY_LIMITING_TBL"};
+C12::Table MakeST40(std::string tbldata) {
+    C12::Table ST40{40, "DIM_SECURITY_LIMITING_TBL", tbldata};
     AppendST40_tail(ST40);
     return ST40;
 }
 
-C12::Table MakeST41() {
-    C12::Table ST41{41, "ACT_SECURITY_LIMITING_TBL"};
+C12::Table MakeST41(std::string tbldata) {
+    C12::Table ST41{41, "ACT_SECURITY_LIMITING_TBL", tbldata};
     AppendST40_tail(ST41);
     return ST41;
 }
@@ -210,20 +213,20 @@ void AppendST50_tail(C12::Table& ST50) {
     ST50.addField("CALENDAR_TBL_SIZE", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST50() {
-    C12::Table ST50{50, "DIM_TIME_TOU_TBL"};
+C12::Table MakeST50(std::string tbldata) {
+    C12::Table ST50{50, "DIM_TIME_TOU_TBL", tbldata};
     AppendST50_tail(ST50);
     return ST50;
 }
 
-C12::Table MakeST51() {
-    C12::Table ST51{51, "ACT_TIME_TOU_TBL"};
+C12::Table MakeST51(std::string tbldata) {
+    C12::Table ST51{51, "ACT_TIME_TOU_TBL", tbldata};
     AppendST50_tail(ST51);
     return ST51;
 }
 
-C12::Table MakeST52() {
-    C12::Table ST52{52, "CLOCK_TBL"};
+C12::Table MakeST52(std::string tbldata) {
+    C12::Table ST52{52, "CLOCK_TBL", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST52.addField("CLOCK_CALENDAR", ltimedate);
     ST52.addField("CLOCK_CALENDAR.YEAR", C12::Table::fieldtype::UINT, 1);
@@ -241,8 +244,8 @@ C12::Table MakeST52() {
     return ST52;
 }
 
-C12::Table MakeST55() {
-    C12::Table ST55{55, "CLOCK_STATE_TBL"};
+C12::Table MakeST55(std::string tbldata) {
+    C12::Table ST55{55, "CLOCK_STATE_TBL", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST55.addField("CLOCK_CALENDAR", ltimedate);
     ST55.addField("CLOCK_CALENDAR.YEAR", C12::Table::fieldtype::UINT, 1);
@@ -266,8 +269,8 @@ C12::Table MakeST55() {
     return ST55;
 }
 
-C12::Table MakeST56() {
-    C12::Table ST56{56, "TIME_REMAIN_TBL"};
+C12::Table MakeST56(std::string tbldata) {
+    C12::Table ST56{56, "TIME_REMAIN_TBL", tbldata};
     // only valid when ACT_TIME_TOU_TBL>SEPARATE_SUM_DEMANDS_FLAG is false
     ST56.addField("TIER_TIME_REMAIN", C12::Table::fieldtype::UINT, 2);
     ST56.addField("SELF_READ_DAYS_REMAIN", C12::Table::fieldtype::UINT, 1);
@@ -314,14 +317,14 @@ void AppendST60_tail(C12::Table& ST60) {
 #endif
 }
 
-C12::Table MakeST60() {
-    C12::Table ST60{60, "DIM_LP_TBL"};
+C12::Table MakeST60(std::string tbldata) {
+    C12::Table ST60{60, "DIM_LP_TBL", tbldata};
     AppendST60_tail(ST60);
     return ST60;
 }
 
-C12::Table MakeST61() {
-    C12::Table ST61{61, "ACT_LP_TBL"};
+C12::Table MakeST61(std::string tbldata) {
+    C12::Table ST61{61, "ACT_LP_TBL", tbldata};
     AppendST60_tail(ST61);
     return ST61;
 }
@@ -341,20 +344,20 @@ void AppendST70_tail(C12::Table& ST70) {
     ST70.addField("NBR_EVENT_ENTRIES", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST70() {
-    C12::Table ST70{70, "DIM_LOG_TBL"};
+C12::Table MakeST70(std::string tbldata) {
+    C12::Table ST70{70, "DIM_LOG_TBL", tbldata};
     AppendST70_tail(ST70);
     return ST70;
 }
 
-C12::Table MakeST71() {
-    C12::Table ST71{71, "ACT_LOG_TBL"};
+C12::Table MakeST71(std::string tbldata) {
+    C12::Table ST71{71, "ACT_LOG_TBL", tbldata};
     AppendST70_tail(ST71);
     return ST71;
 }
 
-C12::Table MakeST72() {
-    C12::Table ST72{72, "EVENTS_ID_TBL"};
+C12::Table MakeST72(std::string tbldata) {
+    C12::Table ST72{72, "EVENTS_ID_TBL", tbldata};
     // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
     ST72.addField("STD_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, 1);
     // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
@@ -362,8 +365,8 @@ C12::Table MakeST72() {
     return ST72;
 }
 
-C12::Table MakeST73() {
-    C12::Table ST73{73, "EVENTS_ID_TBL"};
+C12::Table MakeST73(std::string tbldata) {
+    C12::Table ST73{73, "EVENTS_ID_TBL", tbldata};
     // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
     ST73.addField("STD_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, 1);
     // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
@@ -377,4 +380,371 @@ C12::Table MakeST73() {
     // TODO: actual length is GEN_CONFIG_TBL.DIM_MFG_PROC_USED
     ST73.addField("MFG_PROC_MONITORED_FLAGS", C12::Table::fieldtype::SET, 5);
     return ST73;
+}
+unsigned linkLayerRetries = 0;
+
+static void ReadItem(MProtocol & proto, MStdString item, unsigned count)
+{
+    try {
+        if (item.size() > 2 && !m_isdigit(item[0]) && !m_isdigit(item[0])) {
+            if (item[1] == 'T' && (item[0] == 'S' || item[0] == 'M'))   // table read
+            {
+                int itemInt = MToLong(item.substr(2));
+                if (item[0] == 'M')
+                    itemInt += 2048;
+                proto.QTableRead(itemInt, 0, count);
+            } else if (item[1] == 'F' && (item[0] == 'S' || item[0] == 'M')) {
+                MStdString::size_type openingBrace = item.find('(');
+                MStdString::size_type closingBrace = item.find_last_of(')');
+                if (openingBrace == MStdString::npos
+                    || closingBrace == MStdString::npos
+                    || openingBrace >= closingBrace) {
+                    MException::
+                        Throw
+                        ("Expected function syntax is like SF3(), MF150(01 02 03), ...");
+                }
+                int itemInt = MToLong(item.substr(2, openingBrace - 2));
+                if (item[0] == 'M')
+                    itemInt += 2048;
+                MByteString request;
+                MStdString::size_type requestSize =
+                    closingBrace - openingBrace - 1;
+                if (requestSize > 0)
+                    request =
+                        MUtilities::HexStringToBytes(item.substr(openingBrace + 1, requestSize));
+                proto.QFunctionExecuteRequestResponse(itemInt, request, count);
+            } else
+                MException::Throw("Only prefixes supported are ST, MT, SF, MF");
+        } else {
+            int itemInt = MToLong(item);
+            proto.QTableRead(itemInt, 0, count);
+        }
+    }
+    catch(MException & ex) {
+        ex.Prepend("Bad syntax of argument '" + item + "': ");
+        throw;
+    }
+}
+
+class InterruptHandler          // this is actually a singleton
+{
+    typedef void (*SignalHandlerType)(int);
+    static SignalHandlerType s_previousInterruptHandler;
+    static bool s_isInterrupted;    // Here we know CEO is a singleton object.
+
+    static void MyInterruptHandler(int) {
+        s_isInterrupted = true;
+     } 
+ public:
+    static bool IsInterrupted() {
+        return s_isInterrupted;
+    }
+
+    static void ClearIsInterrupted() {
+        s_isInterrupted = false;
+    }
+
+    InterruptHandler() {
+        s_previousInterruptHandler = signal(SIGINT, MyInterruptHandler);    // Handle Ctrl-C
+        M_ASSERT(s_previousInterruptHandler != MyInterruptHandler); // check we did not call it twice
+    }
+
+    ~InterruptHandler() {
+        signal(SIGINT, s_previousInterruptHandler); // restore signal
+    }
+};
+
+bool InterruptHandler::s_isInterrupted = false;
+InterruptHandler::SignalHandlerType InterruptHandler::s_previousInterruptHandler = nullptr;
+static InterruptHandler s_interruptHandler;
+
+static void CommitCommunication(MProtocol& proto)
+{
+    proto.QCommit(true);
+    while (!proto.QIsDone()) {
+        linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
+        MUtilities::Sleep(100);
+        if (s_interruptHandler.IsInterrupted()) {
+            s_interruptHandler.ClearIsInterrupted();
+            proto.GetChannel()->CancelCommunication(true);
+        }
+    }
+    linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
+}
+
+void Meter::Communicate(MProtocol& proto, const MStdStringVector& tables)
+{
+    proto.QConnect();
+    proto.QStartSession();
+
+    int count {1};
+    for (const auto & item: tables)
+        ReadItem(proto, item, count++);
+
+    proto.QEndSession();
+    CommitCommunication(proto);
+}
+
+/**
+ * Convert from a string to table number.
+ *
+ * Strings must either be MTd+ or STd+ or d+
+ * where 'MT' and 'ST' are those literal characters, 
+ * and 'd+' represents one or more digits.
+ *
+ * @param tblid the passed string
+ * @return table number or -1 on error
+ */
+static int stringToTableNumber(const MStdString& tblid) {
+    enum States { Initial, Digits, NeedOneDigit, WaitForT, Error } state{States::Initial};
+    long number = -1;
+    long offset = 0;
+    for (unsigned char ch : tblid) {
+        switch (state) {
+            case States::Initial: 
+                if (ch == 'S') {  // standard table
+                    state = States::WaitForT;
+                } else if (ch == 'M') { // manufacturer table
+                    offset = 2048;
+                    state = States::WaitForT;
+                } else if (std::isdigit(ch)) {
+                    number = ch - '0';
+                    state = States::Digits;
+                } else {
+                    state = States::Error;
+                }
+                break;
+            case States::Digits:
+                if (std::isdigit(ch)) {
+                    number = 10 * number + (ch - '0');
+                } else {
+                    state = States::Error;
+                }
+                break;
+            case States::NeedOneDigit:
+                if (std::isdigit(ch)) {
+                    number = ch - '0';
+                    state = States::Digits;
+                } else {
+                    state = States::Error;
+                }
+                break;
+            case States::WaitForT:
+                if (ch == 'T') {
+                    state = States::NeedOneDigit;
+                } else {
+                    state = States::Error;
+                }
+                break;
+            case States::Error:
+                return -1;
+        }
+    }
+    return number + offset;
+}
+
+long Meter::evaluate(const std::string& expression) {
+    std::regex field_regex("([A-Z_]+)\\.([A-Z_]+)");
+    std::smatch pieces;
+    std::string tblname, fieldname;
+    if (std::regex_match(expression, pieces, field_regex)) {
+        for (size_t i = 0; i < pieces.size(); ++i) {
+#if VERBOSE_DEBUG            
+            std::ssub_match sub_match = pieces[i];
+            std::string piece = sub_match.str();
+            std::cout << "  submatch " << i << ": " << piece << '\n';
+#endif
+            if (i == 1) {
+                tblname = pieces[i].str();
+            }
+            if (i == 2) {
+                fieldname = pieces[i].str();
+            }
+        }
+    }   
+    for (const auto& t : table) {
+        if (t.Name() == tblname) {
+            return t.value(fieldname);
+        }
+    }
+    return 0;    
+}
+
+void Meter::interpret(int itemInt, MProtocol& proto, int count) {
+    switch (itemInt) {
+    case 0:
+        {
+            auto ST0{MakeST0(proto.QGetTableData(itemInt, count))};
+            ST0.printTo(std::cout);
+            table.push_back(std::move(ST0));
+        }
+        break;
+    case 1:
+        {
+            auto ST1{MakeST1(proto.QGetTableData(itemInt, count))};
+            ST1.printTo(std::cout);
+            table.push_back(std::move(ST1));
+        }
+        break;
+    case 2:
+        {
+            auto ST2{MakeST2(proto.QGetTableData(itemInt, count))};
+            ST2.printTo(std::cout);
+            table.push_back(std::move(ST2));
+        }
+        break;
+    case 3:
+        {
+            auto ST3{MakeST3(proto.QGetTableData(itemInt, count))};
+            ST3.printTo(std::cout);
+            table.push_back(std::move(ST3));
+        }
+        break;
+    case 5:
+        {
+            auto ST5{MakeST5(proto.QGetTableData(itemInt, count))};
+            ST5.printTo(std::cout);
+            table.push_back(std::move(ST5));
+        }
+        break;
+    case 6:
+        {
+            auto ST6{MakeST6(proto.QGetTableData(itemInt, count))};
+            ST6.printTo(std::cout);
+            table.push_back(std::move(ST6));
+        }
+        break;
+    case 20:
+        {
+            auto ST20{MakeST20(proto.QGetTableData(itemInt, count))};
+            ST20.printTo(std::cout);
+            table.push_back(std::move(ST20));
+        }
+        break;
+    case 21:
+        {
+            auto ST21{MakeST21(proto.QGetTableData(itemInt, count))};
+            ST21.printTo(std::cout);
+            table.push_back(std::move(ST21));
+        }
+        break;
+    case 40:
+        {
+            auto ST40{MakeST40(proto.QGetTableData(itemInt, count))};
+            ST40.printTo(std::cout);
+            table.push_back(std::move(ST40));
+        }
+        break;
+    case 41:
+        {
+            auto ST41{MakeST41(proto.QGetTableData(itemInt, count))};
+            ST41.printTo(std::cout);
+            table.push_back(std::move(ST41));
+        }
+        break;
+    case 50:
+        {
+            auto ST50{MakeST50(proto.QGetTableData(itemInt, count))};
+            ST50.printTo(std::cout);
+            table.push_back(std::move(ST50));
+        }
+        break;
+    case 51:
+        {
+            auto ST51{MakeST51(proto.QGetTableData(itemInt, count))};
+            ST51.printTo(std::cout);
+            table.push_back(std::move(ST51));
+        }
+        break;
+    case 52:
+        {
+            auto ST52{MakeST52(proto.QGetTableData(itemInt, count))};
+            ST52.printTo(std::cout);
+            table.push_back(std::move(ST52));
+        }
+        break;
+    case 55:
+        {
+            auto ST55{MakeST55(proto.QGetTableData(itemInt, count))};
+            ST55.printTo(std::cout);
+            table.push_back(std::move(ST55));
+        }
+        break;
+    case 56:
+        {
+            auto ST56{MakeST56(proto.QGetTableData(itemInt, count))};
+            ST56.printTo(std::cout);
+            table.push_back(std::move(ST56));
+        }
+        break;
+    case 60:
+        {
+            auto ST60{MakeST60(proto.QGetTableData(itemInt, count))};
+            ST60.printTo(std::cout);
+            table.push_back(std::move(ST60));
+        }
+        break;
+    case 61:
+        {
+            auto ST61{MakeST61(proto.QGetTableData(itemInt, count))};
+            ST61.printTo(std::cout);
+            table.push_back(std::move(ST61));
+        }
+        break;
+    case 70:
+        {
+            auto ST70{MakeST70(proto.QGetTableData(itemInt, count))};
+            ST70.printTo(std::cout);
+            table.push_back(std::move(ST70));
+        }
+        break;
+    case 71:
+        {
+            auto ST71{MakeST71(proto.QGetTableData(itemInt, count))};
+            ST71.printTo(std::cout);
+            table.push_back(std::move(ST71));
+        }
+        break;
+    case 72:
+        {
+            auto ST72{MakeST72(proto.QGetTableData(itemInt, count))};
+            ST72.printTo(std::cout);
+            table.push_back(std::move(ST72));
+        }
+        break;
+    case 73:
+        {
+            auto ST73{MakeST73(proto.QGetTableData(itemInt, count))};
+            ST73.printTo(std::cout);
+            table.push_back(std::move(ST73));
+        }
+        break;
+    default:
+        // do nothing
+        break;
+    }
+}
+
+void Meter::GetResults(MProtocol& proto, const MStdStringVector& tables)
+{
+    int count{0};
+    for (const auto& item : tables) {
+        ++count;
+        auto itemInt{stringToTableNumber(item)};
+        std::cout << item << ":\n"
+            << MUtilities::BytesToHexString(proto.QGetTableData(itemInt, count),
+                                            "  XX XX XX XX  XX XX XX XX  XX XX XX XX  XX XX XX XX\n")
+            << std::endl;
+        interpret(itemInt, proto, count);
+    }
+
+#if OLD_REPORT
+    MStdString str = "Device (unknown";
+    str += ") errors/retries: ";
+    str += MToStdString(failures);
+    str += '/';
+    str += MToStdString(linkLayerRetries);
+    std::cout << str << std::endl;
+    proto.WriteToMonitor(str);
+#endif
 }

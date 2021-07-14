@@ -19,6 +19,7 @@ namespace C12 {
         virtual unsigned value(const uint8_t*) const { return 0; }
         virtual std::unique_ptr<Field> clone() const = 0;
         virtual void addSubfield(std::string, unsigned, unsigned) {}
+        virtual std::string to_string(const uint8_t* tabledata) const;
     };
 
     class UINT : public Field {
@@ -31,6 +32,7 @@ namespace C12 {
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new UINT{ *this });
         }
+        std::string to_string(const uint8_t* tabledata) const override;
     private:
         std::string name;
         std::size_t offset;
@@ -61,6 +63,7 @@ namespace C12 {
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new STRING{ *this });
         }
+        std::string to_string(const uint8_t* tabledata) const override;
     private:
         std::string name;
         std::size_t offset;
@@ -110,10 +113,10 @@ namespace C12 {
         std::vector<Subfield> subfields;
     };
 
-    class Table : public std::vector<std::unique_ptr<Field>> {
+    class Record : public std::vector<std::unique_ptr<Field>> {
     public:
         enum class fieldtype { UINT, SET, BINARY, STRING, BITFIELD };
-        Table(unsigned number, std::string name);
+        Record(std::string name);
         std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize);
         std::ostream& printTo(const std::string& str, std::ostream& out) const;
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const;
@@ -122,9 +125,30 @@ namespace C12 {
         void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
         void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit);
     private:
-        unsigned num = 0;
         std::string name;
         std::size_t totalsize = 0;
+    };
+
+    class Table : public std::vector<std::unique_ptr<Field>> {
+    public:
+        enum class fieldtype { UINT, SET, BINARY, STRING, BITFIELD };
+        std::string Name() const { return name; }
+        Table(unsigned number, std::string name);
+        Table(unsigned number, std::string name, std::string data);
+        std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize);
+        std::ostream& printTo(const std::string& str, std::ostream& out) const;
+        std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const;
+        std::ostream& printTo(std::ostream& out) const;
+        std::size_t value(const uint8_t* tabledata, const std::string& fieldname) const;
+        std::size_t value(const std::string& fieldname) const;
+        std::optional<std::unique_ptr<Field>> operator[](const std::string& fieldname) const;
+        void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
+        void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit);
+    private:
+        unsigned num = 0;
+        std::string name{};
+        std::size_t totalsize = 0;
+        std::vector<uint8_t> data{};
     };
 }
 

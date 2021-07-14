@@ -65,3 +65,13 @@ TEST(C12TableTest, testTableFieldRef) {
     EXPECT_EQ(s, "\"EE  \"");
 }
 
+TEST(C12TableTest, fieldToString) {
+    auto ST0 = MakeST0(st0.data());
+    auto s = ST0["DEVICE_CLASS"].value()->to_string(st0.data());
+    EXPECT_EQ(s, "\"EE  \"");
+}
+
+TEST(C12TableTest, recordType) {
+    std::stringstream ss;
+    Record r{"GEN_CONFIG_RCD"};
+}
