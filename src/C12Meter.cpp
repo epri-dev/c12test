@@ -570,6 +570,33 @@ long Meter::evaluate(const std::string& expression) {
     return 0;    
 }
 
+std::string Meter::evaluateAsString(const std::string& expression) const {
+    std::regex field_regex("([A-Z_]+)\\.([A-Z_]+)");
+    std::smatch pieces;
+    std::string tblname, fieldname;
+    if (std::regex_match(expression, pieces, field_regex)) {
+        for (size_t i = 0; i < pieces.size(); ++i) {
+#if VERBOSE_DEBUG            
+            std::ssub_match sub_match = pieces[i];
+            std::string piece = sub_match.str();
+            std::cout << "  submatch " << i << ": " << piece << '\n';
+#endif
+            if (i == 1) {
+                tblname = pieces[i].str();
+            }
+            if (i == 2) {
+                fieldname = pieces[i].str();
+            }
+        }
+    }   
+    for (const auto& t : table) {
+        if (t.Name() == tblname) {
+            return t.valueAsString(fieldname);
+        }
+    }
+    return "";    
+}
+
 void Meter::interpret(int itemInt, MProtocol& proto, int count) {
     switch (itemInt) {
     case 0:
@@ -738,13 +765,7 @@ void Meter::GetResults(MProtocol& proto, const MStdStringVector& tables)
         interpret(itemInt, proto, count);
     }
 
-#if OLD_REPORT
-    MStdString str = "Device (unknown";
-    str += ") errors/retries: ";
-    str += MToStdString(failures);
-    str += '/';
-    str += MToStdString(linkLayerRetries);
-    std::cout << str << '\n';
-    proto.WriteToMonitor(str);
-#endif
+    std::stringstream ss;
+    ss << "Device (" << evaluateAsString("GENERAL_MFG_ID_TBL.ED_MODEL") << ") retries: " << linkLayerRetries << '\n';
+    proto.WriteToMonitor(ss.str());
 }

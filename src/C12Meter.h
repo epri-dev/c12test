@@ -9,6 +9,7 @@ public:
     void Communicate(MProtocol& proto, const MStdStringVector& tables);
     void GetResults(MProtocol& proto, const MStdStringVector& tables);
     long evaluate(const std::string& expression);
+    std::string evaluateAsString(const std::string& expression) const;
     void interpret(int itemInt, MProtocol& proto, int count);
 private:
     std::vector<C12::Table> table = {};

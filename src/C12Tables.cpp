@@ -86,10 +86,7 @@ namespace C12 {
 
     // we define a more efficient version of to_string() for STRING
     std::string STRING::to_string(const uint8_t* tabledata) const {
-        std::string s;
-        s.reserve(len);
-        std::copy(tabledata + offset, tabledata + offset + len, s.begin());
-        return s;
+        return std::string{tabledata + offset, tabledata + offset + len};
     }
 
     std::vector<uint8_t> STRING::operator()(const uint8_t* tabledata) const {
@@ -232,6 +229,16 @@ namespace C12 {
             }
         }
         return 0;
+    }
+
+    std::string Table::valueAsString(const std::string& fieldname) const {
+        // find the field
+        for (const auto& fld : *this) {
+            if (fld->Name() == fieldname) {
+                return fld->to_string(static_cast<const uint8_t *>(data.data()));
+            }
+        }
+        return "";
     }
 
     std::ostream& Table::printTo(const uint8_t* tabledata, std::ostream& out) const {

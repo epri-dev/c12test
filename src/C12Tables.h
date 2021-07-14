@@ -141,6 +141,7 @@ namespace C12 {
         std::ostream& printTo(std::ostream& out) const;
         std::size_t value(const uint8_t* tabledata, const std::string& fieldname) const;
         std::size_t value(const std::string& fieldname) const;
+        std::string valueAsString(const std::string& fieldname) const;
         std::optional<std::unique_ptr<Field>> operator[](const std::string& fieldname) const;
         void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit);
         void addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit);
