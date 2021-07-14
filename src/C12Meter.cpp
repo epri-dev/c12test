@@ -3,13 +3,9 @@
 #include <regex>
 #include <signal.h>
 
-static void AppendST20_tail(C12::Table& ST20);
-static void AppendST40_tail(C12::Table& ST40);
-static void AppendST50_tail(C12::Table& ST50);
-static void AppendST60_tail(C12::Table& ST60);
-static void AppendST70_tail(C12::Table& ST70);
+unsigned linkLayerRetries = 0;
 
-C12::Table MakeST0(std::string tbldata) {
+static C12::Table MakeST0(std::string tbldata, Meter& meter) {
     C12::Table ST0{0, "GEN_CONFIG_TBL", tbldata};
     ST0.addField("FORMAT_CONTROL_1", C12::Table::fieldtype::BITFIELD, 1);
     ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
@@ -45,7 +41,7 @@ C12::Table MakeST0(std::string tbldata) {
     return ST0;
 }
 
-C12::Table MakeST1(std::string tbldata) {
+static C12::Table MakeST1(std::string tbldata, Meter& meter) {
     C12::Table ST1{1, "GENERAL_MFG_ID_TBL", tbldata};
     ST1.addField("MANUFACTURER", C12::Table::fieldtype::STRING, 4);
     ST1.addField("ED_MODEL", C12::Table::fieldtype::STRING, 8);
@@ -57,7 +53,7 @@ C12::Table MakeST1(std::string tbldata) {
     return ST1;
 }
 
-C12::Table MakeST2(std::string tbldata) {
+static C12::Table MakeST2(std::string tbldata, Meter& meter) {
     C12::Table ST2{2, "DEVICE_NAMEPLATE_TBL", tbldata};
     ST2.addField("E_KH", C12::Table::fieldtype::STRING, 6);
     ST2.addField("E_KT", C12::Table::fieldtype::STRING, 6);
@@ -76,7 +72,7 @@ C12::Table MakeST2(std::string tbldata) {
     return ST2;
 }
 
-C12::Table MakeST3(std::string tbldata) {
+static C12::Table MakeST3(std::string tbldata, Meter& meter) {
     C12::Table ST3{3, "ED_MODE_STATUS_TBL", tbldata};
     ST3.addField("ED_MODE", C12::Table::fieldtype::BITFIELD, 1);
     ST3.addSubfield("ED_MODE", "METERING_FLAG", 0);
@@ -103,13 +99,13 @@ C12::Table MakeST3(std::string tbldata) {
     return ST3;
 }
 
-C12::Table MakeST5(std::string tbldata) {
+static C12::Table MakeST5(std::string tbldata, Meter& meter) {
     C12::Table ST5{5, "DEVICE_IDENT_TBL", tbldata};
     ST5.addField("IDENTIFICATION", C12::Table::fieldtype::STRING, 20);
     return ST5;
 }
 
-C12::Table MakeST6(std::string tbldata) {
+static C12::Table MakeST6(std::string tbldata, Meter& meter) {
     C12::Table ST6{6, "UTIL_INFO_TBL", tbldata};
     ST6.addField("OWNER_NAME", C12::Table::fieldtype::STRING, 20);
     ST6.addField("UTILITY_DIV", C12::Table::fieldtype::STRING, 20);
@@ -133,7 +129,7 @@ C12::Table MakeST6(std::string tbldata) {
     return ST6;
 }
 
-void AppendST20_tail(C12::Table& ST20) {
+static void AppendST20_tail(C12::Table& ST20) {
     ST20.addField("REG_FUNC1_FLAGS", C12::Table::fieldtype::BITFIELD, 1);
     ST20.addSubfield("REG_FUNC1_FLAGS", "SEASON_INFO_FIELD_FLAG", 0);
     ST20.addSubfield("REG_FUNC1_FLAGS", "DATA_TIME_FIELD_FLAG", 1);
@@ -158,19 +154,19 @@ void AppendST20_tail(C12::Table& ST20) {
     ST20.addField("NBR_PRESENT_VALUES", C12::Table::fieldtype::UINT, 1);
 }
 
-C12::Table MakeST20(std::string tbldata) {
+static C12::Table MakeST20(std::string tbldata, Meter& meter) {
     C12::Table ST20{20, "DIM_REGS_TBL", tbldata};
     AppendST20_tail(ST20);
     return ST20;
 }
 
-C12::Table MakeST21(std::string tbldata) {
+static C12::Table MakeST21(std::string tbldata, Meter& meter) {
     C12::Table ST21{21, "ACT_REGS_TBL", tbldata};
     AppendST20_tail(ST21);
     return ST21;
 }
 
-void AppendST40_tail(C12::Table& ST40) {
+static void AppendST40_tail(C12::Table& ST40) {
     ST40.addField("NBR_PASSWORDS", C12::Table::fieldtype::UINT, 1);
     ST40.addField("PASSWORDS_LEN", C12::Table::fieldtype::UINT, 1);
     ST40.addField("NBR_KEYS", C12::Table::fieldtype::UINT, 1);
@@ -178,19 +174,19 @@ void AppendST40_tail(C12::Table& ST40) {
     ST40.addField("NBR_PERM_USED", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST40(std::string tbldata) {
+static C12::Table MakeST40(std::string tbldata, Meter& meter) {
     C12::Table ST40{40, "DIM_SECURITY_LIMITING_TBL", tbldata};
     AppendST40_tail(ST40);
     return ST40;
 }
 
-C12::Table MakeST41(std::string tbldata) {
+static C12::Table MakeST41(std::string tbldata, Meter& meter) {
     C12::Table ST41{41, "ACT_SECURITY_LIMITING_TBL", tbldata};
     AppendST40_tail(ST41);
     return ST41;
 }
 
-void AppendST50_tail(C12::Table& ST50) {
+static void AppendST50_tail(C12::Table& ST50) {
     ST50.addField("TIME_FUNC_FLAG1_BFLD", C12::Table::fieldtype::BITFIELD, 1);
     ST50.addSubfield("TIME_FUNC_FLAG1_BFLD", "TOU_SELF_READ_FLAG", 0);
     ST50.addSubfield("TIME_FUNC_FLAG1_BFLD", "SEASON_SELF_READ_FLAG", 1);
@@ -213,19 +209,19 @@ void AppendST50_tail(C12::Table& ST50) {
     ST50.addField("CALENDAR_TBL_SIZE", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST50(std::string tbldata) {
+static C12::Table MakeST50(std::string tbldata, Meter& meter) {
     C12::Table ST50{50, "DIM_TIME_TOU_TBL", tbldata};
     AppendST50_tail(ST50);
     return ST50;
 }
 
-C12::Table MakeST51(std::string tbldata) {
+static C12::Table MakeST51(std::string tbldata, Meter& meter) {
     C12::Table ST51{51, "ACT_TIME_TOU_TBL", tbldata};
     AppendST50_tail(ST51);
     return ST51;
 }
 
-C12::Table MakeST52(std::string tbldata) {
+static C12::Table MakeST52(std::string tbldata, Meter& meter) {
     C12::Table ST52{52, "CLOCK_TBL", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST52.addField("CLOCK_CALENDAR", ltimedate);
@@ -244,7 +240,7 @@ C12::Table MakeST52(std::string tbldata) {
     return ST52;
 }
 
-C12::Table MakeST55(std::string tbldata) {
+static C12::Table MakeST55(std::string tbldata, Meter& meter) {
     C12::Table ST55{55, "CLOCK_STATE_TBL", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST55.addField("CLOCK_CALENDAR", ltimedate);
@@ -269,7 +265,7 @@ C12::Table MakeST55(std::string tbldata) {
     return ST55;
 }
 
-C12::Table MakeST56(std::string tbldata) {
+static C12::Table MakeST56(std::string tbldata, Meter& meter) {
     C12::Table ST56{56, "TIME_REMAIN_TBL", tbldata};
     // only valid when ACT_TIME_TOU_TBL>SEPARATE_SUM_DEMANDS_FLAG is false
     ST56.addField("TIER_TIME_REMAIN", C12::Table::fieldtype::UINT, 2);
@@ -278,7 +274,7 @@ C12::Table MakeST56(std::string tbldata) {
     return ST56;
 }
 
-void AppendST60_tail(C12::Table& ST60) {
+static void AppendST60_tail(C12::Table& ST60) {
     ST60.addField("LP_MEMORY_LEN", C12::Table::fieldtype::UINT, 4);
     ST60.addField("LP_FLAGS", C12::Table::fieldtype::BITFIELD, 2);
     ST60.addSubfield("LP_FLAGS", "LP_SET1_INHIBIT_OVF_FLAG", 0);
@@ -317,19 +313,19 @@ void AppendST60_tail(C12::Table& ST60) {
 #endif
 }
 
-C12::Table MakeST60(std::string tbldata) {
+static C12::Table MakeST60(std::string tbldata, Meter& meter) {
     C12::Table ST60{60, "DIM_LP_TBL", tbldata};
     AppendST60_tail(ST60);
     return ST60;
 }
 
-C12::Table MakeST61(std::string tbldata) {
+static C12::Table MakeST61(std::string tbldata, Meter& meter) {
     C12::Table ST61{61, "ACT_LP_TBL", tbldata};
     AppendST60_tail(ST61);
     return ST61;
 }
 
-void AppendST70_tail(C12::Table& ST70) {
+static void AppendST70_tail(C12::Table& ST70) {
     ST70.addField("LOG_FLAGS", C12::Table::fieldtype::BITFIELD, 2);
     ST70.addSubfield("LOG_FLAGS", "EVENT_NUMBER_FLAG", 0);
     ST70.addSubfield("LOG_FLAGS", "HIST_DATE_TIME_FLAG", 1);
@@ -344,44 +340,35 @@ void AppendST70_tail(C12::Table& ST70) {
     ST70.addField("NBR_EVENT_ENTRIES", C12::Table::fieldtype::UINT, 2);
 }
 
-C12::Table MakeST70(std::string tbldata) {
+static C12::Table MakeST70(std::string tbldata, Meter& meter) {
     C12::Table ST70{70, "DIM_LOG_TBL", tbldata};
     AppendST70_tail(ST70);
     return ST70;
 }
 
-C12::Table MakeST71(std::string tbldata) {
+static C12::Table MakeST71(std::string tbldata, Meter& meter) {
     C12::Table ST71{71, "ACT_LOG_TBL", tbldata};
     AppendST70_tail(ST71);
     return ST71;
 }
 
-C12::Table MakeST72(std::string tbldata) {
+static C12::Table MakeST72(std::string tbldata, Meter& meter) {
     C12::Table ST72{72, "EVENTS_ID_TBL", tbldata};
-    // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
-    ST72.addField("STD_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, 1);
-    // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
-    ST72.addField("MFG_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, 2);
+    ST72.addField("STD_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_STD_EVENTS"));
+    ST72.addField("MFG_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_MFG_EVENTS"));
     return ST72;
 }
 
-C12::Table MakeST73(std::string tbldata) {
+static C12::Table MakeST73(std::string tbldata, Meter& meter) {
     C12::Table ST73{73, "EVENTS_ID_TBL", tbldata};
-    // TODO: actual length is ACT_LOG_TBL.NBR_STD_EVENTS
-    ST73.addField("STD_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, 1);
-    // TODO: actual length is ACT_LOG_TBL.NBR_MFG_EVENTS
-    ST73.addField("MFG_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, 2);
-    // TODO: actual length is GEN_CONFIG_TBL.DIM_STD_TBLS_USED
-    ST73.addField("STD_TBLS_MONITORED_FLAGS", C12::Table::fieldtype::SET, 13);
-    // TODO: actual length is GEN_CONFIG_TBL.DIM_MFG_TBLS_USED
-    ST73.addField("MFG_TBLS_MONITORED_FLAGS", C12::Table::fieldtype::SET, 13);
-    // TODO: actual length is GEN_CONFIG_TBL.DIM_STD_PROC_USED
-    ST73.addField("STD_PROC_MONITORED_FLAGS", C12::Table::fieldtype::SET, 3);
-    // TODO: actual length is GEN_CONFIG_TBL.DIM_MFG_PROC_USED
-    ST73.addField("MFG_PROC_MONITORED_FLAGS", C12::Table::fieldtype::SET, 5);
+    ST73.addField("STD_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_STD_EVENTS"));
+    ST73.addField("MFG_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_MFG_EVENTS"));
+    ST73.addField("STD_TBLS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("GEN_CONFIG_TBL.DIM_STD_TBLS_USED"));
+    ST73.addField("MFG_TBLS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("GEN_CONFIG_TBL.DIM_MFG_TBLS_USED"));
+    ST73.addField("STD_PROC_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("GEN_CONFIG_TBL.DIM_STD_PROC_USED"));
+    ST73.addField("MFG_PROC_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("GEN_CONFIG_TBL.DIM_MFG_PROC_USED"));
     return ST73;
 }
-unsigned linkLayerRetries = 0;
 
 static void ReadItem(MProtocol & proto, MStdString item, unsigned count)
 {
@@ -601,147 +588,147 @@ void Meter::interpret(int itemInt, MProtocol& proto, int count) {
     switch (itemInt) {
     case 0:
         {
-            auto ST0{MakeST0(proto.QGetTableData(itemInt, count))};
+            auto ST0{MakeST0(proto.QGetTableData(itemInt, count), *this)};
             ST0.printTo(std::cout);
             table.push_back(std::move(ST0));
         }
         break;
     case 1:
         {
-            auto ST1{MakeST1(proto.QGetTableData(itemInt, count))};
+            auto ST1{MakeST1(proto.QGetTableData(itemInt, count), *this)};
             ST1.printTo(std::cout);
             table.push_back(std::move(ST1));
         }
         break;
     case 2:
         {
-            auto ST2{MakeST2(proto.QGetTableData(itemInt, count))};
+            auto ST2{MakeST2(proto.QGetTableData(itemInt, count), *this)};
             ST2.printTo(std::cout);
             table.push_back(std::move(ST2));
         }
         break;
     case 3:
         {
-            auto ST3{MakeST3(proto.QGetTableData(itemInt, count))};
+            auto ST3{MakeST3(proto.QGetTableData(itemInt, count), *this)};
             ST3.printTo(std::cout);
             table.push_back(std::move(ST3));
         }
         break;
     case 5:
         {
-            auto ST5{MakeST5(proto.QGetTableData(itemInt, count))};
+            auto ST5{MakeST5(proto.QGetTableData(itemInt, count), *this)};
             ST5.printTo(std::cout);
             table.push_back(std::move(ST5));
         }
         break;
     case 6:
         {
-            auto ST6{MakeST6(proto.QGetTableData(itemInt, count))};
+            auto ST6{MakeST6(proto.QGetTableData(itemInt, count), *this)};
             ST6.printTo(std::cout);
             table.push_back(std::move(ST6));
         }
         break;
     case 20:
         {
-            auto ST20{MakeST20(proto.QGetTableData(itemInt, count))};
+            auto ST20{MakeST20(proto.QGetTableData(itemInt, count), *this)};
             ST20.printTo(std::cout);
             table.push_back(std::move(ST20));
         }
         break;
     case 21:
         {
-            auto ST21{MakeST21(proto.QGetTableData(itemInt, count))};
+            auto ST21{MakeST21(proto.QGetTableData(itemInt, count), *this)};
             ST21.printTo(std::cout);
             table.push_back(std::move(ST21));
         }
         break;
     case 40:
         {
-            auto ST40{MakeST40(proto.QGetTableData(itemInt, count))};
+            auto ST40{MakeST40(proto.QGetTableData(itemInt, count), *this)};
             ST40.printTo(std::cout);
             table.push_back(std::move(ST40));
         }
         break;
     case 41:
         {
-            auto ST41{MakeST41(proto.QGetTableData(itemInt, count))};
+            auto ST41{MakeST41(proto.QGetTableData(itemInt, count), *this)};
             ST41.printTo(std::cout);
             table.push_back(std::move(ST41));
         }
         break;
     case 50:
         {
-            auto ST50{MakeST50(proto.QGetTableData(itemInt, count))};
+            auto ST50{MakeST50(proto.QGetTableData(itemInt, count), *this)};
             ST50.printTo(std::cout);
             table.push_back(std::move(ST50));
         }
         break;
     case 51:
         {
-            auto ST51{MakeST51(proto.QGetTableData(itemInt, count))};
+            auto ST51{MakeST51(proto.QGetTableData(itemInt, count), *this)};
             ST51.printTo(std::cout);
             table.push_back(std::move(ST51));
         }
         break;
     case 52:
         {
-            auto ST52{MakeST52(proto.QGetTableData(itemInt, count))};
+            auto ST52{MakeST52(proto.QGetTableData(itemInt, count), *this)};
             ST52.printTo(std::cout);
             table.push_back(std::move(ST52));
         }
         break;
     case 55:
         {
-            auto ST55{MakeST55(proto.QGetTableData(itemInt, count))};
+            auto ST55{MakeST55(proto.QGetTableData(itemInt, count), *this)};
             ST55.printTo(std::cout);
             table.push_back(std::move(ST55));
         }
         break;
     case 56:
         {
-            auto ST56{MakeST56(proto.QGetTableData(itemInt, count))};
+            auto ST56{MakeST56(proto.QGetTableData(itemInt, count), *this)};
             ST56.printTo(std::cout);
             table.push_back(std::move(ST56));
         }
         break;
     case 60:
         {
-            auto ST60{MakeST60(proto.QGetTableData(itemInt, count))};
+            auto ST60{MakeST60(proto.QGetTableData(itemInt, count), *this)};
             ST60.printTo(std::cout);
             table.push_back(std::move(ST60));
         }
         break;
     case 61:
         {
-            auto ST61{MakeST61(proto.QGetTableData(itemInt, count))};
+            auto ST61{MakeST61(proto.QGetTableData(itemInt, count), *this)};
             ST61.printTo(std::cout);
             table.push_back(std::move(ST61));
         }
         break;
     case 70:
         {
-            auto ST70{MakeST70(proto.QGetTableData(itemInt, count))};
+            auto ST70{MakeST70(proto.QGetTableData(itemInt, count), *this)};
             ST70.printTo(std::cout);
             table.push_back(std::move(ST70));
         }
         break;
     case 71:
         {
-            auto ST71{MakeST71(proto.QGetTableData(itemInt, count))};
+            auto ST71{MakeST71(proto.QGetTableData(itemInt, count), *this)};
             ST71.printTo(std::cout);
             table.push_back(std::move(ST71));
         }
         break;
     case 72:
         {
-            auto ST72{MakeST72(proto.QGetTableData(itemInt, count))};
+            auto ST72{MakeST72(proto.QGetTableData(itemInt, count), *this)};
             ST72.printTo(std::cout);
             table.push_back(std::move(ST72));
         }
         break;
     case 73:
         {
-            auto ST73{MakeST73(proto.QGetTableData(itemInt, count))};
+            auto ST73{MakeST73(proto.QGetTableData(itemInt, count), *this)};
             ST73.printTo(std::cout);
             table.push_back(std::move(ST73));
         }
