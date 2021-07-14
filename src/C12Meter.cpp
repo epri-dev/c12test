@@ -734,7 +734,7 @@ void Meter::GetResults(MProtocol& proto, const MStdStringVector& tables)
         std::cout << item << ":\n"
             << MUtilities::BytesToHexString(proto.QGetTableData(itemInt, count),
                                             "  XX XX XX XX  XX XX XX XX  XX XX XX XX  XX XX XX XX\n")
-            << std::endl;
+            << '\n';
         interpret(itemInt, proto, count);
     }
 
@@ -744,7 +744,7 @@ void Meter::GetResults(MProtocol& proto, const MStdStringVector& tables)
     str += MToStdString(failures);
     str += '/';
     str += MToStdString(linkLayerRetries);
-    std::cout << str << std::endl;
+    std::cout << str << '\n';
     proto.WriteToMonitor(str);
 #endif
 }

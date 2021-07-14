@@ -10,11 +10,9 @@
 #include <fstream>
 #include <iostream>
 
-unsigned failures = 0;
-
-
 int main(int argc, char *argv[])
 {
+    unsigned failures = 0;
     Setup setup;
     if (!setup.Initialize(argc, argv))
         return EXIT_FAILURE;
@@ -26,17 +24,17 @@ int main(int argc, char *argv[])
     if (protoC12 != nullptr)
         protoC12->SetEndSessionOnApplicationLayerError(false);   // this is the only property to override
 
-    std::cout << "Entering test loop. Press Ctrl-C to interrupt." << std::endl;
+    std::cout << "Entering test loop. Press Ctrl-C to interrupt.\n";
     class Meter meter;
     try {
         meter.Communicate(*proto, setup.GetTableNames());
         meter.GetResults(*proto, setup.GetTableNames());
     }
     catch(MEOperationCancelled &) {
-        std::cout << "Test loop is cancelled with Ctrl-C." << std::endl;
+        std::cout << "Test loop is cancelled with Ctrl-C.\n";
     }
     catch(MException & ex) {
-        std::cerr << "### Error: " << ex.AsString() << std::endl;
+        std::cerr << "### Error: " << ex.AsString() << '\n';
         ++failures;
     }
     proto->Disconnect();        // never throws
