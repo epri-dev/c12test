@@ -3,10 +3,58 @@
 #include <regex>
 #include <signal.h>
 
+
+class InterruptHandler          // this is actually a singleton
+{
+    typedef void (*SignalHandlerType)(int);
+    static SignalHandlerType s_previousInterruptHandler;
+    static bool s_isInterrupted;    // Here we know CEO is a singleton object.
+
+    static void MyInterruptHandler(int) {
+        s_isInterrupted = true;
+     } 
+public:
+    static bool IsInterrupted() {
+        return s_isInterrupted;
+    }
+
+    static void ClearIsInterrupted() {
+        s_isInterrupted = false;
+    }
+
+    InterruptHandler() {
+        s_previousInterruptHandler = signal(SIGINT, MyInterruptHandler);    // Handle Ctrl-C
+        M_ASSERT(s_previousInterruptHandler != MyInterruptHandler); // check we did not call it twice
+    }
+
+    ~InterruptHandler() {
+        signal(SIGINT, s_previousInterruptHandler); // restore signal
+    }
+};
+
+bool InterruptHandler::s_isInterrupted = false;
+InterruptHandler::SignalHandlerType InterruptHandler::s_previousInterruptHandler = nullptr;
+static InterruptHandler s_interruptHandler;
+
 unsigned linkLayerRetries = 0;
 
-static C12::Table MakeST0(std::string tbldata, Meter& meter) {
-    C12::Table ST0{0, "GEN_CONFIG_TBL", tbldata};
+static void CommitCommunication(MProtocol& proto)
+{
+    proto.QCommit(true);
+    while (!proto.QIsDone()) {
+        linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
+        MUtilities::Sleep(100);
+        if (s_interruptHandler.IsInterrupted()) {
+            s_interruptHandler.ClearIsInterrupted();
+            proto.GetChannel()->CancelCommunication(true);
+        }
+    }
+    linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
+}
+
+static C12::Table MakeST0(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST0{0, "GEN_CONFIG_TBL", "GEN_CONFIG_RCD", tbldata};
     ST0.addField("FORMAT_CONTROL_1", C12::Table::fieldtype::BITFIELD, 1);
     ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
     ST0.addSubfield("FORMAT_CONTROL_1", "CHAR_FORMAT", 1, 3);
@@ -41,8 +89,9 @@ static C12::Table MakeST0(std::string tbldata, Meter& meter) {
     return ST0;
 }
 
-static C12::Table MakeST1(std::string tbldata, Meter& meter) {
-    C12::Table ST1{1, "GENERAL_MFG_ID_TBL", tbldata};
+static C12::Table MakeST1(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST1{1, "GENERAL_MFG_ID_TBL", "MANUFACTURER_IDENT_RCD", tbldata};
     ST1.addField("MANUFACTURER", C12::Table::fieldtype::STRING, 4);
     ST1.addField("ED_MODEL", C12::Table::fieldtype::STRING, 8);
     ST1.addField("HW_VERSION_NUMBER", C12::Table::fieldtype::UINT, 1);
@@ -53,8 +102,9 @@ static C12::Table MakeST1(std::string tbldata, Meter& meter) {
     return ST1;
 }
 
-static C12::Table MakeST2(std::string tbldata, Meter& meter) {
-    C12::Table ST2{2, "DEVICE_NAMEPLATE_TBL", tbldata};
+static C12::Table MakeST2(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST2{2, "DEVICE_NAMEPLATE_TBL", "DEVICE_DEFINITION_RCD", tbldata};
     ST2.addField("E_KH", C12::Table::fieldtype::STRING, 6);
     ST2.addField("E_KT", C12::Table::fieldtype::STRING, 6);
     ST2.addField("E_INPUT_SCALAR", C12::Table::fieldtype::UINT, 1);
@@ -72,8 +122,9 @@ static C12::Table MakeST2(std::string tbldata, Meter& meter) {
     return ST2;
 }
 
-static C12::Table MakeST3(std::string tbldata, Meter& meter) {
-    C12::Table ST3{3, "ED_MODE_STATUS_TBL", tbldata};
+static C12::Table MakeST3(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST3{3, "ED_MODE_STATUS_TBL", "ED_MODE_STATUS_RCD", tbldata};
     ST3.addField("ED_MODE", C12::Table::fieldtype::BITFIELD, 1);
     ST3.addSubfield("ED_MODE", "METERING_FLAG", 0);
     ST3.addSubfield("ED_MODE", "TEST_MODE_FLAG", 1);
@@ -99,14 +150,16 @@ static C12::Table MakeST3(std::string tbldata, Meter& meter) {
     return ST3;
 }
 
-static C12::Table MakeST5(std::string tbldata, Meter& meter) {
-    C12::Table ST5{5, "DEVICE_IDENT_TBL", tbldata};
+static C12::Table MakeST5(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST5{5, "DEVICE_IDENT_TBL", "IDENT_RCD", tbldata};
     ST5.addField("IDENTIFICATION", C12::Table::fieldtype::STRING, 20);
     return ST5;
 }
 
-static C12::Table MakeST6(std::string tbldata, Meter& meter) {
-    C12::Table ST6{6, "UTIL_INFO_TBL", tbldata};
+static C12::Table MakeST6(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST6{6, "UTIL_INFO_TBL", "UTIL_INFO_RCD", tbldata};
     ST6.addField("OWNER_NAME", C12::Table::fieldtype::STRING, 20);
     ST6.addField("UTILITY_DIV", C12::Table::fieldtype::STRING, 20);
     ST6.addField("SERVICE_POINT_ID", C12::Table::fieldtype::STRING, 20);
@@ -129,7 +182,63 @@ static C12::Table MakeST6(std::string tbldata, Meter& meter) {
     return ST6;
 }
 
-static void AppendST20_tail(C12::Table& ST20) {
+static void AppendST10_tail(C12::Table& ST10) 
+{
+    ST10.addField("SOURCE_FLAGS", C12::Table::fieldtype::BITFIELD, 1);
+    ST10.addSubfield("SOURCE_FLAGS", "PF_EXCLUDE_FLAG", 0);
+    ST10.addSubfield("SOURCE_FLAGS", "RESET_EXCLUDE_FLAG", 1);
+    ST10.addSubfield("SOURCE_FLAGS", "BLOCK_DEMAND_FLAG", 2);
+    ST10.addSubfield("SOURCE_FLAGS", "SLIDING_DEMAND_FLAG", 3);
+    ST10.addSubfield("SOURCE_FLAGS", "THERMAL_DEMAND_FLAG", 4);
+    ST10.addSubfield("SOURCE_FLAGS", "SET1_PRESENT_FLAG", 5);
+    ST10.addSubfield("SOURCE_FLAGS", "SET2_PRESENT_FLAG", 6);
+    // TODO this is filler unless GEN_CONFIG_TBL.STD_VERSION_NO > 1
+    ST10.addSubfield("SOURCE_FLAGS", "CONVERSION_ALG_FLAG", 7);
+    ST10.addField("NBR_UOM_ENTRIES", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("NBR_DEMAND_CTRL_ENTRIES", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("DATA_CTRL_LENGTH", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("NBR_DATA_CTRL_ENTRIES", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("NBR_CONSTANTS_ENTRIES", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("CONSTANTS_SELECTOR", C12::Table::fieldtype::UINT, 1);
+    ST10.addField("NBR_SOURCES", C12::Table::fieldtype::UINT, 1);
+}
+
+static C12::Table MakeST10(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST10{10, "DIM_SOURCES_LIM_TBL", "SOURCE_RCD", tbldata};
+    AppendST10_tail(ST10);
+    return ST10;
+}
+
+static C12::Table MakeST11(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST11{11, "ACT_SOURCES_LIM_TBL", "SOURCE_RCD", tbldata};
+    AppendST10_tail(ST11);
+    return ST11;
+}
+
+static C12::Table MakeST12(std::string tbldata, Meter& meter)
+{
+    C12::Table ST12{12, "UOM_ENTRY_TBL", "UOM_ENTRY_RCD", tbldata};
+    ST12.addField("UOM_ENTRY", C12::Table::fieldtype::BITFIELD, 4, meter.evaluate("ACT_SOURCES_LIB_TBL.NBR_UOM_ENTRIES"));
+    ST12.addSubfield("UOM_ENTRY", "ID_CODE", 0, 7);
+    ST12.addSubfield("UOM_ENTRY", "TIME_BASE", 8, 10);
+    ST12.addSubfield("UOM_ENTRY", "MULTIPLIER", 11, 13);
+    ST12.addSubfield("UOM_ENTRY", "Q1_ACCOUNTABILITY", 14);
+    ST12.addSubfield("UOM_ENTRY", "Q2_ACCOUNTABILITY", 15);
+    ST12.addSubfield("UOM_ENTRY", "Q3_ACCOUNTABILITY", 16);
+    ST12.addSubfield("UOM_ENTRY", "Q4_ACCOUNTABILITY", 17);
+    ST12.addSubfield("UOM_ENTRY", "NET_FLOW_ACCOUNTABILITY", 18);
+    ST12.addSubfield("UOM_ENTRY", "SEGMENTATION", 19, 21);
+    ST12.addSubfield("UOM_ENTRY", "HARMONIC", 22);
+    ST12.addSubfield("UOM_ENTRY", "ID_RESOURCE", 23, 27);
+    ST12.addSubfield("UOM_ENTRY", "RESERVED", 28, 30);
+    ST12.addSubfield("UOM_ENTRY", "NFS", 31);
+    return ST12;
+}
+
+static void AppendST20_tail(C12::Table& ST20) 
+{
     ST20.addField("REG_FUNC1_FLAGS", C12::Table::fieldtype::BITFIELD, 1);
     ST20.addSubfield("REG_FUNC1_FLAGS", "SEASON_INFO_FIELD_FLAG", 0);
     ST20.addSubfield("REG_FUNC1_FLAGS", "DATA_TIME_FIELD_FLAG", 1);
@@ -154,19 +263,22 @@ static void AppendST20_tail(C12::Table& ST20) {
     ST20.addField("NBR_PRESENT_VALUES", C12::Table::fieldtype::UINT, 1);
 }
 
-static C12::Table MakeST20(std::string tbldata, Meter& meter) {
-    C12::Table ST20{20, "DIM_REGS_TBL", tbldata};
+static C12::Table MakeST20(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST20{20, "DIM_REGS_TBL", "REGS_RCD", tbldata};
     AppendST20_tail(ST20);
     return ST20;
 }
 
-static C12::Table MakeST21(std::string tbldata, Meter& meter) {
-    C12::Table ST21{21, "ACT_REGS_TBL", tbldata};
+static C12::Table MakeST21(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST21{21, "ACT_REGS_TBL", "REGS_RCD", tbldata};
     AppendST20_tail(ST21);
     return ST21;
 }
 
-static void AppendST40_tail(C12::Table& ST40) {
+static void AppendST40_tail(C12::Table& ST40) 
+{
     ST40.addField("NBR_PASSWORDS", C12::Table::fieldtype::UINT, 1);
     ST40.addField("PASSWORDS_LEN", C12::Table::fieldtype::UINT, 1);
     ST40.addField("NBR_KEYS", C12::Table::fieldtype::UINT, 1);
@@ -174,19 +286,22 @@ static void AppendST40_tail(C12::Table& ST40) {
     ST40.addField("NBR_PERM_USED", C12::Table::fieldtype::UINT, 2);
 }
 
-static C12::Table MakeST40(std::string tbldata, Meter& meter) {
-    C12::Table ST40{40, "DIM_SECURITY_LIMITING_TBL", tbldata};
+static C12::Table MakeST40(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST40{40, "DIM_SECURITY_LIMITING_TBL", "SECURITY_RCD", tbldata};
     AppendST40_tail(ST40);
     return ST40;
 }
 
-static C12::Table MakeST41(std::string tbldata, Meter& meter) {
-    C12::Table ST41{41, "ACT_SECURITY_LIMITING_TBL", tbldata};
+static C12::Table MakeST41(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST41{41, "ACT_SECURITY_LIMITING_TBL", "SECURITY_RCD", tbldata};
     AppendST40_tail(ST41);
     return ST41;
 }
 
-static void AppendST50_tail(C12::Table& ST50) {
+static void AppendST50_tail(C12::Table& ST50) 
+{
     ST50.addField("TIME_FUNC_FLAG1_BFLD", C12::Table::fieldtype::BITFIELD, 1);
     ST50.addSubfield("TIME_FUNC_FLAG1_BFLD", "TOU_SELF_READ_FLAG", 0);
     ST50.addSubfield("TIME_FUNC_FLAG1_BFLD", "SEASON_SELF_READ_FLAG", 1);
@@ -209,20 +324,23 @@ static void AppendST50_tail(C12::Table& ST50) {
     ST50.addField("CALENDAR_TBL_SIZE", C12::Table::fieldtype::UINT, 2);
 }
 
-static C12::Table MakeST50(std::string tbldata, Meter& meter) {
-    C12::Table ST50{50, "DIM_TIME_TOU_TBL", tbldata};
+static C12::Table MakeST50(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST50{50, "DIM_TIME_TOU_TBL", "TIME_TOU_RCD", tbldata};
     AppendST50_tail(ST50);
     return ST50;
 }
 
-static C12::Table MakeST51(std::string tbldata, Meter& meter) {
-    C12::Table ST51{51, "ACT_TIME_TOU_TBL", tbldata};
+static C12::Table MakeST51(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST51{51, "ACT_TIME_TOU_TBL","TIME_TOU_RCD",  tbldata};
     AppendST50_tail(ST51);
     return ST51;
 }
 
-static C12::Table MakeST52(std::string tbldata, Meter& meter) {
-    C12::Table ST52{52, "CLOCK_TBL", tbldata};
+static C12::Table MakeST52(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST52{52, "CLOCK_TBL", "CLOCK_STATE_RCD", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST52.addField("CLOCK_CALENDAR", ltimedate);
     ST52.addField("CLOCK_CALENDAR.YEAR", C12::Table::fieldtype::UINT, 1);
@@ -240,8 +358,9 @@ static C12::Table MakeST52(std::string tbldata, Meter& meter) {
     return ST52;
 }
 
-static C12::Table MakeST55(std::string tbldata, Meter& meter) {
-    C12::Table ST55{55, "CLOCK_STATE_TBL", tbldata};
+static C12::Table MakeST55(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST55{55, "CLOCK_STATE_TBL", "CLOCK_STATE_RCD", tbldata};
     // this is only valid when GEN_CONFIG_TBL.TM_FORMAT == 2
     //ST55.addField("CLOCK_CALENDAR", ltimedate);
     ST55.addField("CLOCK_CALENDAR.YEAR", C12::Table::fieldtype::UINT, 1);
@@ -265,8 +384,9 @@ static C12::Table MakeST55(std::string tbldata, Meter& meter) {
     return ST55;
 }
 
-static C12::Table MakeST56(std::string tbldata, Meter& meter) {
-    C12::Table ST56{56, "TIME_REMAIN_TBL", tbldata};
+static C12::Table MakeST56(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST56{56, "TIME_REMAIN_TBL", "TIME_REMAIN_RCD", tbldata};
     // only valid when ACT_TIME_TOU_TBL>SEPARATE_SUM_DEMANDS_FLAG is false
     ST56.addField("TIER_TIME_REMAIN", C12::Table::fieldtype::UINT, 2);
     ST56.addField("SELF_READ_DAYS_REMAIN", C12::Table::fieldtype::UINT, 1);
@@ -274,7 +394,8 @@ static C12::Table MakeST56(std::string tbldata, Meter& meter) {
     return ST56;
 }
 
-static void AppendST60_tail(C12::Table& ST60) {
+static void AppendST60_tail(C12::Table& ST60) 
+{
     ST60.addField("LP_MEMORY_LEN", C12::Table::fieldtype::UINT, 4);
     ST60.addField("LP_FLAGS", C12::Table::fieldtype::BITFIELD, 2);
     ST60.addSubfield("LP_FLAGS", "LP_SET1_INHIBIT_OVF_FLAG", 0);
@@ -313,20 +434,23 @@ static void AppendST60_tail(C12::Table& ST60) {
 #endif
 }
 
-static C12::Table MakeST60(std::string tbldata, Meter& meter) {
-    C12::Table ST60{60, "DIM_LP_TBL", tbldata};
+static C12::Table MakeST60(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST60{60, "DIM_LP_TBL", "LP_SET_RCD", tbldata};
     AppendST60_tail(ST60);
     return ST60;
 }
 
-static C12::Table MakeST61(std::string tbldata, Meter& meter) {
-    C12::Table ST61{61, "ACT_LP_TBL", tbldata};
+static C12::Table MakeST61(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST61{61, "ACT_LP_TBL","LP_SET_RCD",  tbldata};
     AppendST60_tail(ST61);
     return ST61;
 }
 
-static void AppendST70_tail(C12::Table& ST70) {
-    ST70.addField("LOG_FLAGS", C12::Table::fieldtype::BITFIELD, 2);
+static void AppendST70_tail(C12::Table& ST70) 
+{
+    ST70.addField("LOG_FLAGS", C12::Table::fieldtype::BITFIELD, 1);
     ST70.addSubfield("LOG_FLAGS", "EVENT_NUMBER_FLAG", 0);
     ST70.addSubfield("LOG_FLAGS", "HIST_DATE_TIME_FLAG", 1);
     ST70.addSubfield("LOG_FLAGS", "HIST_SEQ_NBR_FLAG", 2);
@@ -340,27 +464,31 @@ static void AppendST70_tail(C12::Table& ST70) {
     ST70.addField("NBR_EVENT_ENTRIES", C12::Table::fieldtype::UINT, 2);
 }
 
-static C12::Table MakeST70(std::string tbldata, Meter& meter) {
-    C12::Table ST70{70, "DIM_LOG_TBL", tbldata};
+static C12::Table MakeST70(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST70{70, "DIM_LOG_TBL", "LOG_RCD", tbldata};
     AppendST70_tail(ST70);
     return ST70;
 }
 
-static C12::Table MakeST71(std::string tbldata, Meter& meter) {
-    C12::Table ST71{71, "ACT_LOG_TBL", tbldata};
+static C12::Table MakeST71(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST71{71, "ACT_LOG_TBL", "LOG_RCD", tbldata};
     AppendST70_tail(ST71);
     return ST71;
 }
 
-static C12::Table MakeST72(std::string tbldata, Meter& meter) {
-    C12::Table ST72{72, "EVENTS_ID_TBL", tbldata};
+static C12::Table MakeST72(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST72{72, "EVENTS_ID_TBL", "EVENTS_SUPPORTED_RCD", tbldata};
     ST72.addField("STD_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_STD_EVENTS"));
     ST72.addField("MFG_EVENTS_SUPPORTED", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_MFG_EVENTS"));
     return ST72;
 }
 
-static C12::Table MakeST73(std::string tbldata, Meter& meter) {
-    C12::Table ST73{73, "EVENTS_ID_TBL", tbldata};
+static C12::Table MakeST73(std::string tbldata, Meter& meter) 
+{
+    C12::Table ST73{73, "EVENTS_ID_TBL", "HISTORY_CTRL_RCD", tbldata};
     ST73.addField("STD_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_STD_EVENTS"));
     ST73.addField("MFG_EVENTS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("ACT_LOG_TBL.NBR_MFG_EVENTS"));
     ST73.addField("STD_TBLS_MONITORED_FLAGS", C12::Table::fieldtype::SET, meter.evaluate("GEN_CONFIG_TBL.DIM_STD_TBLS_USED"));
@@ -413,65 +541,6 @@ static void ReadItem(MProtocol & proto, MStdString item, unsigned count)
     }
 }
 
-class InterruptHandler          // this is actually a singleton
-{
-    typedef void (*SignalHandlerType)(int);
-    static SignalHandlerType s_previousInterruptHandler;
-    static bool s_isInterrupted;    // Here we know CEO is a singleton object.
-
-    static void MyInterruptHandler(int) {
-        s_isInterrupted = true;
-     } 
- public:
-    static bool IsInterrupted() {
-        return s_isInterrupted;
-    }
-
-    static void ClearIsInterrupted() {
-        s_isInterrupted = false;
-    }
-
-    InterruptHandler() {
-        s_previousInterruptHandler = signal(SIGINT, MyInterruptHandler);    // Handle Ctrl-C
-        M_ASSERT(s_previousInterruptHandler != MyInterruptHandler); // check we did not call it twice
-    }
-
-    ~InterruptHandler() {
-        signal(SIGINT, s_previousInterruptHandler); // restore signal
-    }
-};
-
-bool InterruptHandler::s_isInterrupted = false;
-InterruptHandler::SignalHandlerType InterruptHandler::s_previousInterruptHandler = nullptr;
-static InterruptHandler s_interruptHandler;
-
-static void CommitCommunication(MProtocol& proto)
-{
-    proto.QCommit(true);
-    while (!proto.QIsDone()) {
-        linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
-        MUtilities::Sleep(100);
-        if (s_interruptHandler.IsInterrupted()) {
-            s_interruptHandler.ClearIsInterrupted();
-            proto.GetChannel()->CancelCommunication(true);
-        }
-    }
-    linkLayerRetries = proto.GetCountLinkLayerPacketsRetried();
-}
-
-void Meter::Communicate(MProtocol& proto, const MStdStringVector& tables)
-{
-    proto.QConnect();
-    proto.QStartSession();
-
-    int count {1};
-    for (const auto & item: tables)
-        ReadItem(proto, item, count++);
-
-    proto.QEndSession();
-    CommitCommunication(proto);
-}
-
 /**
  * Convert from a string to table number.
  *
@@ -482,7 +551,8 @@ void Meter::Communicate(MProtocol& proto, const MStdStringVector& tables)
  * @param tblid the passed string
  * @return table number or -1 on error
  */
-static int stringToTableNumber(const MStdString& tblid) {
+static int stringToTableNumber(const MStdString& tblid) 
+{
     enum States { Initial, Digits, NeedOneDigit, WaitForT, Error } state{States::Initial};
     long number = -1;
     long offset = 0;
@@ -530,7 +600,21 @@ static int stringToTableNumber(const MStdString& tblid) {
     return number + offset;
 }
 
-long Meter::evaluate(const std::string& expression) {
+void Meter::Communicate(MProtocol& proto, const MStdStringVector& tables)
+{
+    proto.QConnect();
+    proto.QStartSession();
+
+    int count {1};
+    for (const auto & item: tables)
+        ReadItem(proto, item, count++);
+
+    proto.QEndSession();
+    CommitCommunication(proto);
+}
+
+long Meter::evaluate(const std::string& expression) 
+{
     std::regex field_regex("([A-Z_]+)\\.([A-Z_]+)");
     std::smatch pieces;
     std::string tblname, fieldname;
@@ -557,7 +641,8 @@ long Meter::evaluate(const std::string& expression) {
     return 0;    
 }
 
-std::string Meter::evaluateAsString(const std::string& expression) const {
+std::string Meter::evaluateAsString(const std::string& expression) const 
+{
     std::regex field_regex("([A-Z_]+)\\.([A-Z_]+)");
     std::smatch pieces;
     std::string tblname, fieldname;
@@ -584,7 +669,8 @@ std::string Meter::evaluateAsString(const std::string& expression) const {
     return "";    
 }
 
-void Meter::interpret(int itemInt, MProtocol& proto, int count) {
+void Meter::interpret(int itemInt, MProtocol& proto, int count) 
+{
     switch (itemInt) {
     case 0:
         {
@@ -626,6 +712,27 @@ void Meter::interpret(int itemInt, MProtocol& proto, int count) {
             auto ST6{MakeST6(proto.QGetTableData(itemInt, count), *this)};
             ST6.printTo(std::cout);
             table.push_back(std::move(ST6));
+        }
+        break;
+    case 10:
+        {
+            auto ST10{MakeST10(proto.QGetTableData(itemInt, count), *this)};
+            ST10.printTo(std::cout);
+            table.push_back(std::move(ST10));
+        }
+        break;
+    case 11:
+        {
+            auto ST11{MakeST11(proto.QGetTableData(itemInt, count), *this)};
+            ST11.printTo(std::cout);
+            table.push_back(std::move(ST11));
+        }
+        break;
+    case 12:
+        {
+            auto ST12{MakeST12(proto.QGetTableData(itemInt, count), *this)};
+            ST12.printTo(std::cout);
+            table.push_back(std::move(ST12));
         }
         break;
     case 20:
