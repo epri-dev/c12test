@@ -167,51 +167,95 @@ namespace C12 {
         subfields.emplace_back(Subfield{ name, startbit, endbit });
     }
 
+    ARRAY::ARRAY(std::string name, std::size_t offset, Record::fieldtype type, std::size_t fieldsize, std::size_t count)
+        : name{ name }
+        , offset{ offset }
+        , count{ count }
+    {
+        switch (type) {
+        case Record::fieldtype::UINT:
+            rec = std::make_unique<UINT>(name, 0, fieldsize);
+            break;
+        case Record::fieldtype::SET:
+            rec = std::make_unique<SET>(name, 0, fieldsize);
+            break;
+        case Record::fieldtype::STRING:
+            rec = std::make_unique<STRING>(name, 0, fieldsize);
+            break;
+        case Record::fieldtype::BINARY:
+            rec = std::make_unique<BINARY>(name, 0, fieldsize);
+            break;
+        case Record::fieldtype::BITFIELD:
+            rec = std::make_unique<BITFIELD>(name, 0, fieldsize);
+            break;
+        }
+    }
+
+    std::ostream& ARRAY::printTo(const uint8_t* tabledata, std::ostream& out) const {
+        for (std::size_t i{0}; i < count; ++i) {
+            out << "\n    " << Name() << "[" << i << "] = ";
+            rec->printTo(tabledata + i * rec->size(), out);
+        }
+        return out << '\n';
+    }
+
+    std::unique_ptr<Field> ARRAY::clone() const {
+        // TODO: recreate whatever rec is pointing to
+        return std::unique_ptr<Field>(new ARRAY(name, offset, Record::fieldtype::STRING, 0, 0));
+    }
+
     Record::Record(std::string name) 
         : name{ name }
     {
     }
 
 
-    Table::Table(unsigned number, std::string name)
-        : num{ number }
-        , name{ name }
-    {
-    }
-
-    Table::Table(unsigned number, std::string name, std::string data)
-        : num{ number }
+    Table::Table(unsigned number, std::string name, std::string recordname, std::string data)
+        : Record{ recordname }
+        , num{ number }
         , name{ name }
         , data{ data.begin(), data.end() }
     {
     }
 
-    std::size_t Table::addField(std::string name, Table::fieldtype type, std::size_t fieldsize) {
+    Table::Table(unsigned number, std::string name, std::string recordname, std::basic_string<uint8_t> data)
+        : Record{ recordname }
+        , num{ number }
+        , name{ name }
+        , data{ data.begin(), data.end() }
+    {
+    }
+
+    std::size_t Record::addField(std::string name, Record::fieldtype type, std::size_t fieldsize) {
         switch (type) {
-        case Table::fieldtype::UINT:
+        case Record::fieldtype::UINT:
             emplace_back(std::make_unique<UINT>(name, totalsize, fieldsize));
             break;
-        case Table::fieldtype::SET:
+        case Record::fieldtype::SET:
             emplace_back(std::make_unique<SET>(name, totalsize, fieldsize));
             break;
-        case Table::fieldtype::STRING:
+        case Record::fieldtype::STRING:
             emplace_back(std::make_unique<STRING>(name, totalsize, fieldsize));
             break;
-        case Table::fieldtype::BINARY:
+        case Record::fieldtype::BINARY:
             emplace_back(std::make_unique<BINARY>(name, totalsize, fieldsize));
             break;
-        case Table::fieldtype::BITFIELD:
+        case Record::fieldtype::BITFIELD:
             emplace_back(std::make_unique<BITFIELD>(name, totalsize, fieldsize));
             break;
         }
         return totalsize += fieldsize;
     }
+    std::size_t Record::addField(std::string name, Record::fieldtype type, std::size_t fieldsize, std::size_t arraysize) {
+        emplace_back(std::make_unique<ARRAY>(name, totalsize, type, fieldsize, arraysize));
+        return totalsize += fieldsize * arraysize;
+    }
 
-    std::ostream& Table::printTo(const std::string& str, std::ostream& out) const {
+    std::ostream& Record::printTo(const std::string& str, std::ostream& out) const {
         return printTo(reinterpret_cast<const uint8_t*>(str.data()), out);
     }
 
-    std::size_t Table::value(const uint8_t* tabledata, const std::string& fieldname) const {
+    std::size_t Record::value(const uint8_t* tabledata, const std::string& fieldname) const {
         // find the field
         for (const auto& fld : *this) {
             if (fld->Name() == fieldname) {
@@ -241,8 +285,7 @@ namespace C12 {
         return "";
     }
 
-    std::ostream& Table::printTo(const uint8_t* tabledata, std::ostream& out) const {
-        out << "TABLE " << num << ' ' << name;
+    std::ostream& Record::printTo(const uint8_t* tabledata, std::ostream& out) const {
         for (const auto& fld : *this) {
             out << "\n    " << fld->Name() << " = ";
             fld->printTo(tabledata, out);
@@ -252,14 +295,10 @@ namespace C12 {
 
     std::ostream& Table::printTo(std::ostream& out) const {
         out << "TABLE " << num << ' ' << name;
-        for (const auto& fld : *this) {
-            out << "\n    " << fld->Name() << " = ";
-            fld->printTo(static_cast<const uint8_t *>(data.data()), out);
-        }
-        return out << '\n';
+        return Record::printTo(data.data(), out);
     }
 
-    std::optional<std::unique_ptr<Field>> Table::operator[](const std::string& fieldname) const {
+    std::optional<std::unique_ptr<Field>> Record::operator[](const std::string& fieldname) const {
         for (const auto& fld : *this) {
             if (fld->Name() == fieldname) {
                 return std::optional<std::unique_ptr<Field>>{fld->clone()};
@@ -268,7 +307,7 @@ namespace C12 {
         return std::nullopt;
     }
 
-    void Table::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit) {
+    void Record::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit) {
         for (const auto& fld : *this) {
             if (fld->Name() == fieldname) {
                 fld->addSubfield(subfieldname, startbit, endbit);
@@ -277,7 +316,7 @@ namespace C12 {
         }
     }
 
-    void Table::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit) {
+    void Record::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit) {
         addSubfield(fieldname, subfieldname, startbit, startbit);
     }
 }
