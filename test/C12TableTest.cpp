@@ -21,8 +21,8 @@ static std::basic_string<uint8_t> st0{
 
 using namespace C12;
 
-Table MakeST0(const uint8_t *tabledata) {
-    Table ST0{0, "GEN_CONFIG_TBL"}; 
+Table MakeST0(std::basic_string<uint8_t> tabledata) {
+    Table ST0{0, "GEN_CONFIG_TBL", "GEN_CONFIG_RCD", tabledata}; 
     ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
     ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
     ST0.addSubfield("FORMAT_CONTROL_1", "CHAR_FORMAT", 1, 3);
@@ -48,17 +48,17 @@ Table MakeST0(const uint8_t *tabledata) {
     ST0.addField("DIM_MFG_PROC_USED", Table::fieldtype::UINT, 1);
     ST0.addField("DIM_MFG_STATUS_USED", Table::fieldtype::UINT, 1);
     ST0.addField("NBR_PENDING", Table::fieldtype::UINT, 1);
-    ST0.addField("STD_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
-    ST0.addField("MFG_TBLS_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
-    ST0.addField("STD_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_PROC_USED"));
-    ST0.addField("MFG_PROC_USED", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_PROC_USED"));
-    ST0.addField("STD_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_STD_TBLS_USED"));
-    ST0.addField("MFG_TBLS_WRITE", Table::fieldtype::SET, ST0.value(tabledata, "DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_TBLS_USED", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_USED", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_MFG_TBLS_USED"));
+    ST0.addField("STD_PROC_USED", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_STD_PROC_USED"));
+    ST0.addField("MFG_PROC_USED", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_MFG_PROC_USED"));
+    ST0.addField("STD_TBLS_WRITE", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_STD_TBLS_USED"));
+    ST0.addField("MFG_TBLS_WRITE", Table::fieldtype::SET, ST0.Record::value(reinterpret_cast<const uint8_t *>(tabledata.c_str()), "DIM_MFG_TBLS_USED"));
     return ST0;
 }
 
 TEST(C12TableTest, testTableFieldRef) {
-    auto ST0 = MakeST0(st0.data());
+    auto ST0 = MakeST0(st0);
     std::stringstream ss;
     ST0["DEVICE_CLASS"].value()->printTo(st0.data(), ss);
     std::string s{ss.str()};
@@ -66,7 +66,7 @@ TEST(C12TableTest, testTableFieldRef) {
 }
 
 TEST(C12TableTest, fieldToString) {
-    auto ST0 = MakeST0(st0.data());
+    auto ST0 = MakeST0(st0);
     auto s = ST0["DEVICE_CLASS"].value()->to_string(st0.data());
     EXPECT_EQ(s, "\"EE  \"");
 }
