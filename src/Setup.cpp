@@ -34,7 +34,7 @@ bool Setup::Initialize(int argc, char** argv)
 #endif
    try
    {
-      parser.SetDescription("Universal ANSI C12 reader and link tester");
+      parser.SetDescription("C12 table reader " M_PRODUCT_LEGAL_COPYRIGHT);
       parser.SetCopyright("Metering SDK " M_SDK_VERSION_STRING " " M_SDK_COPYRIGHT);
       parser.DeclareNamedString('c', "channel",  "properties", "Channel properties",  channelProperties);
       parser.DeclareNamedString('p', "protocol", "properties", "Protocol properties", protocolProperties);
