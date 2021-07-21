@@ -6,7 +6,18 @@
 #include "C12Tables.h"
 #include <gtest/gtest.h>
 
-static std::basic_string<uint8_t> st0{ 
+using namespace C12;
+
+class C12TableTest : public ::testing::Test {
+protected:
+    C12TableTest() : ST0{MakeST0(st0)} {}
+    const static std::basic_string<uint8_t> st0;
+    Table MakeST0(std::basic_string<uint8_t> tabledata);
+    Table ST0;
+};
+
+const std::basic_string<uint8_t> C12TableTest::st0 = 
+{ 
      0x12,0x0A,0x9A,0x45, 0x45,0x20,0x20,0x02, 
      0x00,0x13,0x18,0x01, 0x00,0x0D,0x0D,0x03,
      0x05,0x0D,0x06,0xFF, 0xAD,0xF0,0xDF,0x03, 
@@ -19,9 +30,7 @@ static std::basic_string<uint8_t> st0{
      0x19,0x67,0x10,0x00, 0x82,0xF5,0xE0,
 };
 
-using namespace C12;
-
-Table MakeST0(std::basic_string<uint8_t> tabledata) {
+Table C12TableTest::MakeST0(std::basic_string<uint8_t> tabledata) {
     Table ST0{0, "GEN_CONFIG_TBL", "GEN_CONFIG_RCD", tabledata}; 
     ST0.addField("FORMAT_CONTROL_1", Table::fieldtype::BITFIELD, 1);
     ST0.addSubfield("FORMAT_CONTROL_1", "DATA_ORDER", 0, 0);
@@ -57,21 +66,30 @@ Table MakeST0(std::basic_string<uint8_t> tabledata) {
     return ST0;
 }
 
-TEST(C12TableTest, testTableFieldRef) {
-    auto ST0 = MakeST0(st0);
+TEST_F(C12TableTest, testTableFieldRef) {
     std::stringstream ss;
     ST0["DEVICE_CLASS"].value()->printTo(st0.data(), ss);
     std::string s{ss.str()};
     EXPECT_EQ(s, "\"EE  \"");
 }
 
-TEST(C12TableTest, fieldToString) {
-    auto ST0 = MakeST0(st0);
+TEST_F(C12TableTest, fieldToString) {
     auto s = ST0["DEVICE_CLASS"].value()->to_string(st0.data());
     EXPECT_EQ(s, "\"EE  \"");
 }
 
-TEST(C12TableTest, recordType) {
-    std::stringstream ss;
-    Record r{"GEN_CONFIG_RCD"};
+TEST_F(C12TableTest, fieldToStringSimple) {
+    auto s = ST0.valueAsString("DEVICE_CLASS");
+    EXPECT_EQ(s, "\"EE  \"");
 }
+
+TEST_F(C12TableTest, fieldToValue) {
+    auto s = ST0.value("NBR_PENDING");
+    EXPECT_EQ(s, 6);
+}
+
+TEST_F(C12TableTest, bitfieldToValue) {
+    auto s = ST0["FORMAT_CONTROL_3"].value()->value("NI_FORMAT1");
+    EXPECT_EQ(s, 9);
+}
+
