@@ -66,11 +66,14 @@ Table C12TableTest::MakeST0(std::basic_string<uint8_t> tabledata) {
     return ST0;
 }
 
-TEST_F(C12TableTest, testTableFieldRef) {
-    std::stringstream ss;
-    ST0["DEVICE_CLASS"].value()->printTo(st0.data(), ss);
-    std::string s{ss.str()};
-    EXPECT_EQ(s, "\"EE  \"");
+TEST_F(C12TableTest, tableName) {
+    auto s = ST0.Name();
+    EXPECT_EQ(s, "GEN_CONFIG_TBL");
+}
+
+TEST_F(C12TableTest, tableValue) {
+    auto s = ST0.value("DIM_STD_PROC_USED");
+    EXPECT_EQ(s, 3);
 }
 
 TEST_F(C12TableTest, fieldToString) {
@@ -88,8 +91,44 @@ TEST_F(C12TableTest, fieldToValue) {
     EXPECT_EQ(s, 6);
 }
 
-TEST_F(C12TableTest, bitfieldToValue) {
-    auto s = ST0["FORMAT_CONTROL_3"].value()->value("NI_FORMAT1");
-    EXPECT_EQ(s, 9);
+TEST_F(C12TableTest, tableFieldRef) {
+    std::stringstream ss;
+    ST0["DEVICE_CLASS"].value()->printTo(st0.data(), ss);
+    std::string s{ss.str()};
+    EXPECT_EQ(s, "\"EE  \"");
+}
+
+TEST_F(C12TableTest, printBitfield) {
+    std::stringstream ss;
+    ST0["FORMAT_CONTROL_3"].value()->printTo(st0.data(), ss);
+    std::string s{ss.str()};
+    EXPECT_EQ(s, "{\n\tNI_FORMAT1 = 10\n\tNI_FORMAT2 = 9\n    }");
+}
+
+TEST_F(C12TableTest, getBitfieldSize) {
+    auto s = ST0["FORMAT_CONTROL_3"].value()->size();
+    EXPECT_EQ(s, 1);
+}
+
+TEST_F(C12TableTest, getSetSizeNum) {
+    auto s = ST0["STD_PROC_USED"].value()->size();
+    EXPECT_EQ(s, 3);
+}
+
+TEST_F(C12TableTest, getSetSizeField) {
+    auto s = ST0["STD_PROC_USED"].value()->size();
+    EXPECT_EQ(s, ST0.value("DIM_STD_PROC_USED"));
+}
+
+TEST_F(C12TableTest, printSet) {
+    std::stringstream ss;
+    ST0["STD_PROC_USED"].value()->printTo(st0.data(), ss);
+    std::string s{ss.str()};
+    EXPECT_EQ(s, "{ 3 4 5 6 7 8 9 10 11 12 14 20 }");
+}
+
+TEST_F(C12TableTest, getTableSize) {
+    auto s = ST0.totalSize();
+    EXPECT_EQ(s, st0.size());
 }
 
