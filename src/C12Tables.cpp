@@ -70,6 +70,10 @@ namespace C12 {
         return v;
     }
 
+    unsigned BINARY::value(const uint8_t* tabledata, std::size_t index) const {
+        return tabledata[offset + index];
+    };
+
     std::ostream& BINARY::printTo(const uint8_t* tabledata, std::ostream& out) const {
         tabledata += offset;
         out << "\"";
@@ -85,9 +89,11 @@ namespace C12 {
     {
     }
 
+#define DUMP(x) std::cout << #x " = " << x << '\n'
+
     // we define a more efficient version of to_string() for STRING
     std::string STRING::to_string(const uint8_t* tabledata) const {
-        return std::string{tabledata + offset, tabledata + offset + len};
+        return "\"" + std::string{tabledata + offset, tabledata + offset + len} + "\"";
     }
 
     std::vector<uint8_t> STRING::operator()(const uint8_t* tabledata) const {
@@ -96,6 +102,10 @@ namespace C12 {
         std::copy(tabledata + offset, tabledata + offset + len, v.begin());
         return v;
     }
+
+    unsigned STRING::value(const uint8_t* tabledata, std::size_t index) const {
+        return tabledata[offset + index];
+    };
 
     std::ostream& STRING::printTo(const uint8_t* tabledata, std::ostream& out) const {
         tabledata += offset;
@@ -135,6 +145,10 @@ namespace C12 {
         }
         return out << "}";
     }
+    unsigned SET::value(const uint8_t* tabledata, std::size_t index) const {
+        auto bset{ operator()(tabledata) };
+        return bset[index];
+    }
 
     BITFIELD::BITFIELD(std::string name, std::size_t offset, std::size_t len)
         : name{ name }
@@ -149,6 +163,15 @@ namespace C12 {
             out << "\t" << sub.Name() << " = " << sub(ReadUnsigned(tabledata + offset, len, global_big_endian)) << '\n';
         }
         return out << "    }";
+    }
+
+    unsigned BITFIELD::value(const uint8_t* tabledata, const std::string& subfieldname) const {
+        for (const auto& sub : subfields) {
+            if (sub.Name() == subfieldname) {
+                return sub(ReadUnsigned(tabledata + offset, len, global_big_endian));
+            }
+        }
+        return 0;
     }
 
     BITFIELD::Subfield::Subfield(std::string name, unsigned startbit, unsigned endbit)
@@ -190,6 +213,10 @@ namespace C12 {
             rec = std::make_unique<BITFIELD>(name, 0, fieldsize);
             break;
         }
+    }
+
+    unsigned ARRAY::value(const uint8_t *tabledata, std::size_t index) const {
+        return rec->value(tabledata + offset + index * rec->size());
     }
 
     std::ostream& ARRAY::printTo(const uint8_t* tabledata, std::ostream& out) const {
@@ -271,6 +298,24 @@ namespace C12 {
         for (const auto& fld : *this) {
             if (fld->Name() == fieldname) {
                 return fld->value(static_cast<const uint8_t *>(data.data()));
+            }
+        }
+        return 0;
+    }
+
+    std::size_t Table::value(const std::string& fieldname, const std::size_t index) const {
+        for (const auto& fld : *this) {
+            if (fld->Name() == fieldname) {
+                return fld->value(static_cast<const uint8_t *>(data.data()), index);
+            }
+        }
+        return 0;
+    }
+
+    std::size_t Table::value(const std::string& fieldname, const std::string& subfieldname) const {
+        for (const auto& fld : *this) {
+            if (fld->Name() == fieldname) {
+                return fld->value(static_cast<const uint8_t *>(data.data()), subfieldname);
             }
         }
         return 0;

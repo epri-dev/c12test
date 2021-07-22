@@ -17,6 +17,8 @@ namespace C12 {
         virtual std::string Name() const = 0;
         virtual std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const = 0;
         virtual unsigned value(const uint8_t*) const { return 0; }
+        virtual unsigned value(const uint8_t*, std::size_t) const { return 0; }
+        virtual unsigned value(const uint8_t*, const std::string&) const { return 0; }
         virtual std::size_t size() const = 0;
         virtual std::unique_ptr<Field> clone() const = 0;
         virtual void addSubfield(std::string, unsigned, unsigned) {}
@@ -47,6 +49,7 @@ namespace C12 {
         BINARY(std::string name, std::size_t offset, std::size_t len = 1);
         std::vector<uint8_t> operator()(const uint8_t* tabledata) const;
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const override;
+        unsigned value(const uint8_t* tabledata, std::size_t index) const override;
         std::size_t size() const override { return len; }
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new BINARY{ *this });
@@ -63,6 +66,7 @@ namespace C12 {
         STRING(std::string name, std::size_t offset, std::size_t len = 1);
         std::vector<uint8_t> operator()(const uint8_t* tabledata) const;
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const override;
+        unsigned value(const uint8_t* tabledata, std::size_t index) const override;
         std::size_t size() const override { return len; }
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new STRING{ *this });
@@ -80,6 +84,7 @@ namespace C12 {
         SET(std::string name, std::size_t offset, std::size_t len = 1);
         std::vector<bool> operator()(const uint8_t* tabledata) const;
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const override;
+        unsigned value(const uint8_t* tabledata, std::size_t index) const override;
         std::size_t size() const override { return len; }
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new SET{ *this });
@@ -97,6 +102,7 @@ namespace C12 {
         BITFIELD(std::string name, std::size_t offset, std::size_t len = 1);
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const override;
         std::size_t size() const override { return len; }
+        unsigned value(const uint8_t* tabledata, const std::string& subfieldname) const override;
         std::unique_ptr<Field> clone() const override {
             return std::unique_ptr<Field>(new BITFIELD{ *this });
         }
@@ -123,6 +129,7 @@ namespace C12 {
     public:
         enum class fieldtype { UINT, SET, BINARY, STRING, BITFIELD, ARRAY };
         Record(std::string name);
+        virtual std::string Name() const { return name; }
         std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize);
         std::size_t addField(std::string name, fieldtype type, std::size_t fieldsize, std::size_t arraysize);
         std::ostream& printTo(const std::string& str, std::ostream& out) const;
@@ -142,7 +149,11 @@ namespace C12 {
         std::string Name() const override { return name; }
         ARRAY(std::string name, std::size_t offset, Record::fieldtype type, std::size_t fieldsize, std::size_t count);
         std::ostream& printTo(const uint8_t* tabledata, std::ostream& out) const override;
-        std::size_t size() const override { return rec->size() * count; }
+        // special indexed value version
+        unsigned value(const uint8_t *tabledata, std::size_t index) const override;
+        std::size_t size() const override { 
+            return rec->size() * count; 
+        }
         std::unique_ptr<Field> clone() const override;
     private:
         std::string name;
@@ -156,8 +167,10 @@ namespace C12 {
     public:
         Table(unsigned number, std::string name, std::string recordname, std::string data);
         Table(unsigned number, std::string name, std::string recordname, std::basic_string<uint8_t> data);
-        std::string Name() const { return name; }
+        std::string Name() const override { return name; }
         std::size_t value(const std::string& fieldname) const;
+        std::size_t value(const std::string& fieldname, std::size_t index) const;
+        std::size_t value(const std::string& fieldname, const std::string& subfieldname) const;
         std::string valueAsString(const std::string& fieldname) const;
         std::ostream& printTo(std::ostream& out) const;
         std::size_t totalSize() const;
