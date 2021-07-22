@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 set(EXECUTABLE_NAME "c12test")
-add_executable(${EXECUTABLE_NAME} autoreader.cpp Setup.cpp)
+add_executable(${EXECUTABLE_NAME} c12test.cpp Setup.cpp)
 if (MSVC)
     # warning level 4 and all warnings as errors
     target_compile_options(${EXECUTABLE_NAME} PRIVATE "/WX")

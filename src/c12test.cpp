@@ -1,6 +1,4 @@
-// File reader.cpp
-//
-// Universal configurable reader and link checker
+// c12test.cpp
 
 #include <MCORE/MCOREExtern.h>
 #include <MCOM/MCOM.h>
