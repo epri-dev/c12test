@@ -160,6 +160,7 @@ namespace C12 {
         std::size_t value(const std::string& fieldname) const;
         std::string valueAsString(const std::string& fieldname) const;
         std::ostream& printTo(std::ostream& out) const;
+        std::size_t totalSize() const;
     private:
         unsigned num = 0;
         std::string name{};

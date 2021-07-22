@@ -3,6 +3,7 @@
 #include <iterator>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 
 static bool global_big_endian{false};
@@ -305,6 +306,10 @@ namespace C12 {
             }
         }
         return std::nullopt;
+    }
+
+    std::size_t Table::totalSize() const {
+        return std::accumulate(begin(), end(), 0UL, [](std::size_t sz, const std::unique_ptr<Field>& fld){ return sz + fld->size(); });
     }
 
     void Record::addSubfield(const std::string& fieldname, std::string subfieldname, unsigned startbit, unsigned endbit) {
