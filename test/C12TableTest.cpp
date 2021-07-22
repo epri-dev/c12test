@@ -71,6 +71,11 @@ TEST_F(C12TableTest, tableName) {
     EXPECT_EQ(s, "GEN_CONFIG_TBL");
 }
 
+TEST_F(C12TableTest, fieldName) {
+    auto s = ST0.back()->name();
+    EXPECT_EQ(s, "MFG_TBLS_WRITE");
+}
+
 TEST_F(C12TableTest, tableValue) {
     auto s = ST0.value("DIM_STD_PROC_USED");
     EXPECT_EQ(s, 3);
