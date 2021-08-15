@@ -5,9 +5,10 @@
 #include "C12Tables.h"
 #include "C12Meter.h"
 #include "Setup.h"
+#include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <iostream>
-#include <cctype>
 #include <sstream>
 
 static bool ReadMeter(Meter& meter, MProtocol* proto, std::vector<std::string> tblvec, unsigned& failures) {
