@@ -42,6 +42,20 @@ public:
       return m_verbose;
    }
 
+   /// Called after Initialize to get the value of single flag
+   ///
+   bool GetSingleFlag() const
+   {
+      return m_single;
+   }
+
+   /// Called after Initialize to get the value of single flag
+   ///
+   bool GetFullAutoFlag() const
+   {
+      return m_fullauto;
+   }
+
 private:
 
    void DoReadIni(const std::string& fileName);
@@ -52,6 +66,8 @@ private:
    MChannel*        m_channel;
    MStdStringVector m_tables;
    bool             m_verbose;
+   bool             m_single;
+   bool             m_fullauto;
 };
 
 #endif // SETUP_H

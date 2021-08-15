@@ -11,7 +11,9 @@ Setup::Setup()
    m_protocol(nullptr),
    m_channel(nullptr),
    m_tables(),
-   m_verbose(false)
+   m_verbose(false),
+   m_single(false),
+   m_fullauto(false)
 {
 }
 
@@ -40,6 +42,8 @@ bool Setup::Initialize(int argc, char** argv)
       parser.DeclareNamedString('p', "protocol", "properties", "Protocol properties", protocolProperties);
       parser.DeclareNamedString('C', "config",   "file-name",  "Configuration file name",              iniFileName);
       parser.DeclareFlag('v', "verbose", "Full diagnostic output", m_verbose);
+      parser.DeclareFlag('s', "single", "Read single tables, skipping over errors", m_single);
+      parser.DeclareFlag('A', "automatic", "Fully automatic mode", m_fullauto);
 #if !M_NO_MCOM_MONITOR
       parser.DeclareNamedString('f', "monitor-file",    "file-name", "Store communication log to ml file", monitorFileName);
       parser.DeclareNamedString('a', "monitor-address", "file-name", "Send monitor data to this address", monitorAddress);
